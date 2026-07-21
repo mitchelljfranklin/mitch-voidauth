@@ -54,6 +54,8 @@ Before considering work done:
 - **Early returns over deep nesting.** Use guard clauses. Functions should read top-to-bottom like a story.
 - **No over-engineered abstractions.** Don't create a helper for a two-line check used twice in the same file. Every abstraction must reduce total cognitive load.
 - **Duplicate code is noise.** If logic appears in two places, extract it into a shared location.
+- **Match existing conventions.** When editing a file, mimic its import style, error handling pattern, and naming. Don't introduce a different pattern in the same module.
+- **Human-readable output.** Generated code should look like a human wrote it — clean formatting, logical grouping, descriptive names, and no mechanical boilerplate patterns. If it looks generated, it needs more polish.
 
 ### Avoid these patterns
 
