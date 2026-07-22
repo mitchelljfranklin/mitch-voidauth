@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Upstream VoidAuth
+    url: https://github.com/voidauth/voidauth
+    about: For issues not related to the LDAP Sync feature, consider reporting upstream
+  - name: Documentation
+    url: https://github.com/mitchelljfranklin/mitch-voidauth/blob/mitch-voidauth/docs/Getting-Started.md
+    about: Read the documentation before opening an issue
+  - name: Quick Start
+    url: https://github.com/mitchelljfranklin/mitch-voidauth#quick-start
+    about: Get started with Mitch-VoidAuth in minutes

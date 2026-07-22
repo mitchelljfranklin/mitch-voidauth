@@ -1,0 +1,104 @@
+name: Bug report
+description: Report a bug or unexpected behaviour
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. The more detail you provide, the faster we can help.
+
+        **Is this a security vulnerability?** Do not open a public issue — email the maintainer instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear, concise description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps to trigger the bug.
+      placeholder: |
+        1. Log in as Admin
+        2. Go to Settings
+        3. Enable LDAP Sync
+        4. Check logs for error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: A clear description of the expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recordings
+      description: Drag and drop images or paste links. Include browser DevTools or container logs if relevant.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit hash
+      description: Which image tag or commit are you running?
+      placeholder: "latest, commit a1b2c3d, or v1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: db_adapter
+    attributes:
+      label: Database adapter
+      description: What is DB_ADAPTER set to?
+      options:
+        - postgres
+        - sqlite3
+    validations:
+      required: true
+  - type: dropdown
+    id: deploy
+    attributes:
+      label: Deployment
+      description: How is the app running?
+      options:
+        - Docker Compose
+        - Bare Node.js
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: ldap_related
+    attributes:
+      label: LDAP Sync
+      description: Is the issue related to the LDAP Sync feature?
+      options:
+        - label: This issue involves LDAP Sync (enabled via LDAP_SYNC_ENABLED)
+  - type: textarea
+    id: ldap_config
+    attributes:
+      label: LDAP Sync configuration
+      description: |
+        If LDAP Sync is enabled, provide relevant environment variables (omit passwords).
+        This helps us identify directory-specific issues.
+      placeholder: |
+        LDAP_SYNC_URL: ldap://ldap.example.com
+        LDAP_SYNC_BASE_DN: dc=example,dc=com
+        Directory type: Active Directory
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: Paste any relevant logs. This will be formatted as code.
+      render: shell
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I am on the latest image or commit on `mitch-voidauth`
+          required: true

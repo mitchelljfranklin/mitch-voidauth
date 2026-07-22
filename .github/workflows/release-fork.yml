@@ -1,9 +1,8 @@
 name: Release Fork
 
 on:
-  push:
-    branches:
-      - mitch-voidauth
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -38,6 +37,9 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha
 
       - name: Docker QEMU

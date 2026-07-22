@@ -3,7 +3,7 @@
 ## Branch structure (fork)
 
 - **`main`** — clean mirror of `upstream/main` (voidauth/voidauth). No fork-specific files here.
-- **`mitch-voidauth`** — the fork's deployment branch. Contains LDAP sync code and fork-specific CI/config.
+- **`mitch-voidauth`** — the fork's deployment branch. Contains LDAP sync code and fork-specific CI/config. Set this as the default branch on GitHub so issue templates and CI workflows run from the fork.
 - All new features intended for upstream: branch off `main`.
 - All fork-only features: branch off `mitch-voidauth`.
 
@@ -11,7 +11,16 @@
 
 - `Dockerfile.fork` — uses public `node:24-alpine3.22` instead of private `dhi.io/node:24-alpine3.22`
 - `.github/workflows/release-fork.yml` — builds & pushes to `ghcr.io/mitchelljfranklin/mitch-voidauth`
+- `.github/workflows/docs-fork.yml` — builds VitePress docs and deploys to GitHub Pages
 - `compose.fork.yml` — points to fork's GHCR image, enables LDAP port 3890
+- `.github/README.md` — fork's custom README with LDAP sync info. Root `README.md` is upstream's (kept clean for syncing).
+- `.github/ISSUE_TEMPLATE/` — fork-specific issue templates (YAML forms with LDAP sync fields)
+- `.github/PULL_REQUEST_TEMPLATE.md` — fork-specific PR template
+- `SECURITY.md` — fork-specific security policy (reporting, scope, deployment checklist)
+- `docs/.vitepress/` — VitePress documentation site config (replaces upstream's Docsify)
+- `docs/package.json` — VitePress dependency (separate from root package.json to avoid merge conflicts)
+- `docs/index.md` — VitePress home page (fork-specific, credits upstream)
+- `docs/welcome.md` — fork introduction page
 
 ## Upstream sync routine
 

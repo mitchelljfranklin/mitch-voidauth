@@ -1,14 +1,14 @@
 ## Description
-<!-- 
-Required, DO NOT leave this blank!
-This PR adds/removes/updates/fixes the feature/bug. 
--->
 
-## Related Tickets & Documents
-<!-- Link any issues this fixes -->
+<!-- Briefly describe the change and why it is needed. -->
 
-## AI Usage
-<!-- If any AI tooling was used to generate any part of this contribution, mention the tool and in what way it was used. See details in the CONTRIBUTING.md contribution guide -->
+## Checklist
 
-## Screenshots
-<!-- Any visual changes require screenshots -->
+- [ ] `npm run lint` passes
+- [ ] `npm run server:build` passes (includes tsc + madge circular check)
+- [ ] `cd frontend && npm run build` passes
+- [ ] No circular import dependencies introduced
+- [ ] Types are explicit — no `any` at exported boundaries
+- [ ] Changes work on both `linux/amd64` and `linux/arm64`
+- [ ] Fork-specific files updated if necessary (`Dockerfile.fork`, `compose.fork.yml`)
+- [ ] Docs updated if public-facing behaviour changed

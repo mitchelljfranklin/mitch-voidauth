@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. To keep the discussion focused, describe the problem first, then the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: |
+        What problem does this solve? Describe the use case — who is the user and what are they trying to accomplish?
+      placeholder: "As an admin, I need to map LDAP group names to VoidAuth groups so that..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        How would you like it to work? Be as specific as you can.
+        Screenshots, mockups, or references to similar features in other tools are very helpful.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches have you thought about? Why did you reject them?
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Affected area
+      description: What part of the app does this touch?
+      options:
+        - label: LDAP Sync
+        - label: LDAP Server
+        - label: OIDC Provider
+        - label: ProxyAuth
+        - label: User Management
+        - label: Groups / Security
+        - label: Admin Panel / UI
+        - label: API
+        - label: Email / Notifications
+        - label: Documentation
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: This feature aligns with the project's scope (SSO, OIDC, LDAP — not general infrastructure or unrelated tooling)
+          required: true
