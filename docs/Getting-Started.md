@@ -11,7 +11,7 @@ The service expects a mounted volume for configuration, and either a postgres da
 ```yaml
 services:
   voidauth: 
-    image: voidauth/voidauth:latest
+    image: ghcr.io/mitchelljfranklin/mitch-voidauth:latest
     restart: unless-stopped
     volumes:
       - ./voidauth/config:/app/config
@@ -22,7 +22,7 @@ services:
       # - "3890:3890" # only needed if LDAP Server is enabled
     environment:
       # Required environment variables
-      # See https://voidauth.app/#/Getting-Started?id=environment-variables for a list of possible environment variables
+      # See https://auth.mitchforge.com/Configuration for a list of possible environment variables
       APP_URL: # required
       DB_ADAPTER: postgres # this is the default value
       DB_HOST: voidauth-db # required
@@ -49,7 +49,7 @@ Below is an alternate Docker Compose setup using a SQLite database:
 ```yaml
 services:
   voidauth: 
-    image: voidauth/voidauth:latest
+    image: ghcr.io/mitchelljfranklin/mitch-voidauth:latest
     restart: unless-stopped
     volumes:
       - ./voidauth/config:/app/config
@@ -61,7 +61,7 @@ services:
       # - "3890:3890" # only needed if LDAP Server is enabled
     environment:
       # Required environment variables
-      # See https://voidauth.app/#/Getting-Started?id=environment-variables for a list of possible environment variables
+      # See https://auth.mitchforge.com/Configuration for a list of possible environment variables
       APP_URL: # required, ex. https://auth.example.com
       STORAGE_KEY: # required
       DB_ADAPTER: sqlite

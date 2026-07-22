@@ -9,7 +9,7 @@ In the guides below, there may be omitted options when those options are set to 
 > Client IDs **must** be unique between OIDC Apps. Client Secrets **must** be long and randomly generated. The Client Secret field on the OIDC App page can be randomly generated and copied to the clipboard for use within the OIDC App. Client Secrets are encrypted on disk.
 
 > [!NOTE]
-> The guides below are maintained by the community and may not always be accurate or current. If you notice any inaccuracies or have suggestions for improvements, please contribute those changes by submitting a pull request on the GitHub repository [here](https://github.com/voidauth/voidauth).
+> The guides below are maintained by the community and may not always be accurate or current. If you notice any inaccuracies or have suggestions for improvements, please contribute those changes by submitting a pull request on the GitHub repository [here](https://github.com/mitchelljfranklin/mitch-voidauth).
 
 <br>
 

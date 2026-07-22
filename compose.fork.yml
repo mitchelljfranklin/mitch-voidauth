@@ -11,7 +11,7 @@ services:
       - "3890:3890"
     environment:
       # Required environment variables
-      # See https://voidauth.app/#/Getting-Started?id=environment-variables for a list of possible environment variables
+      # See https://auth.mitchforge.com/Configuration for a list of possible environment variables
       APP_URL: # required
       DB_ADAPTER: postgres # this is the default value
       DB_HOST: voidauth-db # required

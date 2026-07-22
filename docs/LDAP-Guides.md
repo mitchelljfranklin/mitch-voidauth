@@ -32,7 +32,7 @@ For services that support LDAP bind authentication, enable bind authentication a
 In the guides below, there may be omitted options when those options are not supported or are not required to be set. Default values (ex. `LDAP_BASE_DN: dc=voidauth`) are listed below, if they have been changed they should be replaced with their changed value.
 
 > [!NOTE]
-> The guides below are maintained by the community and may not always be accurate or current. If you notice any inaccuracies or have suggestions for improvements, please contribute those changes by submitting a pull request on the GitHub repository [here](https://github.com/voidauth/voidauth).
+> The guides below are maintained by the community and may not always be accurate or current. If you notice any inaccuracies or have suggestions for improvements, please contribute those changes by submitting a pull request on the GitHub repository [here](https://github.com/mitchelljfranklin/mitch-voidauth).
 
 <br>
 
