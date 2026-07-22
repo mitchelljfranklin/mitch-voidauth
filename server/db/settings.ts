@@ -82,11 +82,11 @@ export async function getAllSettings(): Promise<SettingsResponse> {
   }
 
   const result: SettingsResponse = {
-    APP_TITLE: getValue('APP_TITLE', null),
-    APP_COLOR: getValue('APP_COLOR', null),
-    APP_FONT: getValue('APP_FONT', null),
-    CONTACT_EMAIL: getValue('CONTACT_EMAIL', null),
-    DEFAULT_REDIRECT: getValue('DEFAULT_REDIRECT', null),
+    APP_TITLE: getValue('APP_TITLE', appConfig.APP_TITLE || null),
+    APP_COLOR: getValue('APP_COLOR', appConfig.APP_COLOR || null),
+    APP_FONT: getValue('APP_FONT', appConfig.APP_FONT || null),
+    CONTACT_EMAIL: getValue('CONTACT_EMAIL', appConfig.CONTACT_EMAIL ?? null),
+    DEFAULT_REDIRECT: getValue('DEFAULT_REDIRECT', appConfig.DEFAULT_REDIRECT ?? null),
     SIGNUP: getBoolean('SIGNUP', appConfig.SIGNUP),
     SIGNUP_REQUIRES_APPROVAL: getBoolean('SIGNUP_REQUIRES_APPROVAL', appConfig.SIGNUP_REQUIRES_APPROVAL),
     EMAIL_VERIFICATION: getBoolean('EMAIL_VERIFICATION', !!appConfig.EMAIL_VERIFICATION),
@@ -95,7 +95,7 @@ export async function getAllSettings(): Promise<SettingsResponse> {
     API_RATELIMIT: getNumber('API_RATELIMIT', appConfig.API_RATELIMIT),
     ADMIN_EMAILS: getValue('ADMIN_EMAILS', null),
     DEFAULT_USER_EXPIRES_IN: getValue('DEFAULT_USER_EXPIRES_IN', null),
-    SMTP_FROM: getValue('SMTP_FROM', null),
+    SMTP_FROM: getValue('SMTP_FROM', appConfig.SMTP_FROM ?? null),
     APP_LOGO: getValue('APP_LOGO', null),
   }
 
