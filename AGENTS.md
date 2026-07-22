@@ -61,6 +61,7 @@ Before considering work done:
 - **Full descriptive names.** `calculateWeightedScore`, not `calcWS`. Variables are noun phrases, functions are verb phrases. Single-letter variables only in trivial loop indices (`i`, `j`).
 - **One thought per line.** Break chained operations into intermediate variables with descriptive names. No dense one-liners.
 - **Early returns over deep nesting.** Use guard clauses. Functions should read top-to-bottom like a story.
+- **No magic values.** Replace literal numbers and strings with named constants or enums. `3600` tells you nothing; `SYNC_INTERVAL_SECONDS` does.
 - **No over-engineered abstractions.** Don't create a helper for a two-line check used twice in the same file. Every abstraction must reduce total cognitive load.
 - **Duplicate code is noise.** If logic appears in two places, extract it into a shared location.
 - **Match existing conventions.** When editing a file, mimic its import style, error handling pattern, and naming. Don't introduce a different pattern in the same module.
