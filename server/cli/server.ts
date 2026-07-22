@@ -279,6 +279,18 @@ export async function serve() {
     // Replace base href with path of APP_URL
     index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${basePath()}/"/>`)
 
+    const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
+
+    const hasDBLogo = !!appConfig.APP_LOGO
+
+    if (hasDBLogo) {
+      const logoUrl = appConfig.APP_LOGO as string
+      const mimeType = logoUrl.startsWith('data:image/svg+xml') ? 'image/svg+xml' : 'image/png'
+      index = index.replaceAll(faviconRegex, `<link rel="icon" href="${logoUrl}" sizes="any" type="${mimeType}"/>`)
+      index = index.replace(/<meta[^>]*name="logoUri"[^>]*>/g, `<meta name="logoUri" content="${logoUrl}"/>`)
+      return index
+    }
+
     // dynamically replace favicon and logo depending on whats available in config/branding
     const brandingFiles = fs.readdirSync(path.join('./config', 'branding'))
     const isBrandingLogo = brandingFiles.includes('logo.svg') || brandingFiles.includes('logo.png')
@@ -287,7 +299,6 @@ export async function serve() {
     const isBrandingImgs = isBrandingLogo || isBrandingFavicon || isBrandingTouch
 
     // find a file to use as the favicon
-    const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
     if (isBrandingImgs) {
       const brandingFiles = fs.readdirSync(path.join('./config', 'branding'))
       const faviconPreferenceOrder = ['favicon.svg', 'favicon.png', 'logo.svg', 'logo.png', 'apple-touch-icon.png']
@@ -341,6 +352,9 @@ export async function serve() {
             const { applySettingsFromDB } = await import('../util/config')
             const settings = await getAllSettings()
             applySettingsFromDB(settings)
+
+            // Regenerate theme CSS with DB-backed color
+            await generateTheme()
           } catch (settingsError) {
             logger({
               level: 'error',

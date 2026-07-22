@@ -868,6 +868,7 @@ import { getAllSettings, setSetting } from '../db/settings'
 import { updateSettingsValidator } from '@shared/api-request/admin/UpdateSettingsRequest'
 import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
 import { applySettingsFromDB } from '../util/config'
+import { generateTheme } from '../util/theme'
 
 adminRouter.get('/settings', async (_req, res) => {
   const settings = await getAllSettings()
@@ -893,6 +894,17 @@ adminRouter.patch('/settings',
     const settings = await getAllSettings()
     applySettingsFromDB(settings)
 
+    // Regenerate theme CSS so color changes take effect immediately
+    try {
+      await generateTheme()
+    } catch (themeError) {
+      logger({
+        level: 'error',
+        message: 'Failed to regenerate theme after settings save.',
+        errors: themeError instanceof Error ? [themeError] : [{ message: String(themeError) }],
+      })
+    }
+
     logger({
       level: 'info',
       message: 'Admin updated settings.',
@@ -903,32 +915,22 @@ adminRouter.patch('/settings',
 
 const MAX_LOGO_SIZE_BYTES = 256 * 1024
 
-adminRouter.post('/settings/logo', (req, res) => {
-  const chunks: Buffer[] = []
-  req.on('data', (chunk) => {
-    chunks.push(Buffer.from(chunk as string))
-  })
-  req.on('end', async () => {
-    const body = Buffer.concat(chunks)
-    if (body.length > MAX_LOGO_SIZE_BYTES) {
+const logoUploadValidator = {
+  dataUrl: zod.string().startsWith('data:image/', 'Must be a data URL starting with data:image/'),
+  mimeType: zod.enum(['image/svg+xml', 'image/png', 'image/jpeg']),
+}
+
+adminRouter.post('/settings/logo',
+  zodValidate({
+    body: logoUploadValidator,
+  }), async (req, res) => {
+    const { dataUrl } = req.body
+
+    if (Buffer.byteLength(dataUrl, 'utf8') > MAX_LOGO_SIZE_BYTES * 2) {
       res.status(413).send({ message: 'Logo exceeds maximum size of 256 KB.' })
       return
     }
-    const base64 = body.toString('base64')
-    const headerBytes = body.subarray(0, 16).toString('ascii')
-    let mimeType: string
-    if (headerBytes.includes('<?xml') || headerBytes.includes('<svg')) {
-      mimeType = 'image/svg+xml'
-    } else if (headerBytes.includes('PNG')) {
-      mimeType = 'image/png'
-    } else if (headerBytes.includes('JFIF') || headerBytes.includes('Exif')) {
-      mimeType = 'image/jpeg'
-    } else {
-      res.status(400).send({ message: 'Unsupported image format. Upload SVG or PNG.' })
-      return
-    }
-    const dataUrl = `data:${mimeType};base64,${base64}`
+
     await setSetting('APP_LOGO', dataUrl)
     res.send({ logo: dataUrl })
   })
-})

@@ -4,6 +4,7 @@ import { TABLES } from '@shared/db'
 import { logger } from '../util/logger'
 import zod from 'zod'
 import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
+import appConfig from '../util/config'
 
 const SETTING_PREFIX = 'SETTING_'
 
@@ -86,12 +87,12 @@ export async function getAllSettings(): Promise<SettingsResponse> {
     APP_FONT: getValue('APP_FONT', null),
     CONTACT_EMAIL: getValue('CONTACT_EMAIL', null),
     DEFAULT_REDIRECT: getValue('DEFAULT_REDIRECT', null),
-    SIGNUP: getBoolean('SIGNUP', false),
-    SIGNUP_REQUIRES_APPROVAL: getBoolean('SIGNUP_REQUIRES_APPROVAL', true),
-    EMAIL_VERIFICATION: getBoolean('EMAIL_VERIFICATION', false),
-    MFA_REQUIRED: getBoolean('MFA_REQUIRED', false),
-    PASSWORD_STRENGTH: getNumber('PASSWORD_STRENGTH', 3),
-    API_RATELIMIT: getNumber('API_RATELIMIT', 60),
+    SIGNUP: getBoolean('SIGNUP', appConfig.SIGNUP),
+    SIGNUP_REQUIRES_APPROVAL: getBoolean('SIGNUP_REQUIRES_APPROVAL', appConfig.SIGNUP_REQUIRES_APPROVAL),
+    EMAIL_VERIFICATION: getBoolean('EMAIL_VERIFICATION', !!appConfig.EMAIL_VERIFICATION),
+    MFA_REQUIRED: getBoolean('MFA_REQUIRED', appConfig.MFA_REQUIRED),
+    PASSWORD_STRENGTH: getNumber('PASSWORD_STRENGTH', appConfig.PASSWORD_STRENGTH),
+    API_RATELIMIT: getNumber('API_RATELIMIT', appConfig.API_RATELIMIT),
     ADMIN_EMAILS: getValue('ADMIN_EMAILS', null),
     DEFAULT_USER_EXPIRES_IN: getValue('DEFAULT_USER_EXPIRES_IN', null),
     SMTP_FROM: getValue('SMTP_FROM', null),

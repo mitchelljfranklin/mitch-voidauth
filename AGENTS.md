@@ -166,5 +166,9 @@ This project supports both PostgreSQL and SQLite. When writing database code:
   and the caller (e.g. `server/cli/server.ts`) reads from DB and passes it in.
 - **Settings are loaded on first maintenance run** inside `doMaintenance()` in `server/cli/server.ts`,
   after `createInitialAdmin()`. The ALS context and DB transaction are already set up there.
-- **Logo uploads bypass Express JSON parsing.** Use raw `req.on('data')` / `req.on('end')` event
-  listeners to collect binary chunks. Detect format from magic bytes in the first 16 bytes of the buffer.
+- After loading or changing settings that affect UI appearance (`APP_COLOR`, `APP_FONT`, `APP_LOGO`),
+  call `generateTheme()` to regenerate the Angular Material theme CSS.
+- **Logo uploads use JSON, not raw binary.** `express.json()` middleware runs before all route handlers
+  and drains the `req` stream. Never use `req.on('data')` / `req.on('end')` on routes behind Express body
+  parsers — the stream will already be consumed. Instead, read the file into a data URL on the frontend
+  (via `FileReader.readAsDataURL()`) and send it as a normal JSON body with `{ dataUrl, mimeType }`.

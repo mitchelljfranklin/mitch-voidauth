@@ -26,6 +26,7 @@ class Config {
 
   APP_COLOR = '#906bc7'
   APP_FONT = ''
+  APP_LOGO?: string
 
   // Database config
   DB_ADAPTER = 'postgres'
@@ -731,6 +732,9 @@ export function applySettingsFromDB(settings: SettingsResponse) {
   }
   if (settings.SMTP_FROM != null) {
     appConfig.SMTP_FROM = settings.SMTP_FROM || undefined
+  }
+  if (settings.APP_LOGO != null) {
+    appConfig.APP_LOGO = settings.APP_LOGO || undefined
   }
 
   logger({
