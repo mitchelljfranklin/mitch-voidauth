@@ -132,3 +132,19 @@ This project supports both PostgreSQL and SQLite. When writing database code:
 - Foreign key columns use `.references().inTable().onDelete('CASCADE')`
 - New non-nullable columns: add nullable → backfill → drop nullable (3-step migration)
 - All `knex.schema` and query operations must work on both backends — test against both if query logic differs
+
+## Config class quirks
+
+- **`Config` is not a real class.** It's a plain object with typed property defaults — no methods live on it.
+  `assignConfigValue()` is a standalone function, not a method. To extend config behavior, add standalone
+  functions (see `applySettingsFromDB()`).
+- **`ADMIN_EMAILS` and `DEFAULT_USER_EXPIRES_IN` have their own parsing logic** in `assignConfigValue()`.
+  When setting these from DB-backed settings, pass the string value through `assignConfigValue()` rather than
+  assigning directly — it handles `stringDuration()`, `posInt()`, and `booleanString(false)` parsing.
+- **Circular dependency avoidance:** `config.ts` cannot import from `server/db/` because those modules
+  import `config.ts` back. Use an injected-function pattern: config exports a function that takes data,
+  and the caller (e.g. `server/cli/server.ts`) reads from DB and passes it in.
+- **Settings are loaded on first maintenance run** inside `doMaintenance()` in `server/cli/server.ts`,
+  after `createInitialAdmin()`. The ALS context and DB transaction are already set up there.
+- **Logo uploads bypass Express JSON parsing.** Use raw `req.on('data')` / `req.on('end')` event
+  listeners to collect binary chunks. Detect format from magic bytes in the first 16 bytes of the buffer.
