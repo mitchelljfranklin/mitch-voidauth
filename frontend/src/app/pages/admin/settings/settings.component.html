@@ -51,9 +51,7 @@
       <mat-card-content class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>{{ "admin.settings.labels.password-strength" | translate }}</mat-label>
-          <mat-slider [min]="0" [max]="4" [step]="1" [discrete]="true" [showTickMarks]="true">
-            <input matSliderThumb formControlName="PASSWORD_STRENGTH" />
-          </mat-slider>
+          <input matInput type="number" min="0" max="4" formControlName="PASSWORD_STRENGTH" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -101,7 +99,7 @@
           }
           <input type="file" accept="image/svg+xml,image/png" (change)="onLogoSelected($event)" />
           @if (logoSaving) {
-            <mat-spinner [diameter]="24"></mat-spinner>
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
         </div>
       </mat-card-content>

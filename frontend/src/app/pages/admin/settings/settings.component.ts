@@ -6,7 +6,6 @@ import { SnackbarService } from '../../../services/snackbar.service'
 import { SpinnerService } from '../../../services/spinner.service'
 import { MaterialModule } from '../../../material-module'
 import { TranslatePipe } from '@ngx-translate/core'
-import { NgClass } from '@angular/common'
 
 @Component({
   selector: 'app-settings',
@@ -14,7 +13,6 @@ import { NgClass } from '@angular/common'
     MaterialModule,
     ReactiveFormsModule,
     TranslatePipe,
-    NgClass,
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
@@ -50,7 +48,7 @@ export class SettingsComponent implements OnInit {
   }
 
   async loadSettings() {
-    this.spinnerService.start()
+    this.spinnerService.show()
     try {
       const settings = await this.adminService.settings()
       this.settingsForm.patchValue({
@@ -73,7 +71,7 @@ export class SettingsComponent implements OnInit {
     } catch (_error) {
       this.snackbarService.error('Failed to load settings')
     } finally {
-      this.spinnerService.stop()
+      this.spinnerService.hide()
     }
   }
 
@@ -83,7 +81,7 @@ export class SettingsComponent implements OnInit {
       return
     }
 
-    this.spinnerService.start()
+    this.spinnerService.show()
     try {
       const values = this.settingsForm.value
       await this.adminService.updateSettings({
@@ -106,7 +104,7 @@ export class SettingsComponent implements OnInit {
     } catch (_error) {
       this.snackbarService.error('Failed to save settings')
     } finally {
-      this.spinnerService.stop()
+      this.spinnerService.hide()
     }
   }
 
