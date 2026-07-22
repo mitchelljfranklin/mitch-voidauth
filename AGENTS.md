@@ -52,6 +52,9 @@ Before considering work done:
 
 - **No stubs.** No `TODO`/`FIXME`, no empty/throwing function bodies, no dead or commented-out code. Intentional empty states must be clearly labelled.
 - **Lint + build clean.** `npm run lint` and `npm run server:build` pass. For frontend changes, `cd frontend && npm run build` also passes.
+- **Run `npx tsc` before pushing server changes.** The Dockerfile CI runs `tsc` directly, but locally
+  `server:build` only validates via esbuild (which skips stricter type checks). If you only run `server:build`,
+  type errors will surface in CI.
 - **Circular imports must not exist.** `esbuild.config.ts` runs madge first — any circular dependency in `server/` aborts.
 - **Types are explicit.** No `any` at exported boundaries (use `unknown` + narrowing). Validate all external input with zod.
 - **Documentation stays current.** Every fork-specific feature or user-visible change must update the relevant docs:
@@ -117,6 +120,18 @@ patterns that require the reader to hold complex state in their head:
 - **Original Dockerfile** requires `dhi.io` login (private hardened node image). Fork builds use `Dockerfile.fork` which avoids this.
 - **Multi-arch** (`linux/amd64,linux/arm64`) is needed for ARM64/Portainer deployments.
 - **`release.yml`** is upstream's workflow — it needs `DOCKERHUB_TOKEN` secret your fork doesn't have. Ignore its failures; use `release-fork.yml` instead.
+
+## Frontend gotchas
+
+- **Check `MaterialModule` before using any Material component.** The project uses a shared `MaterialModule`
+  (`frontend/src/app/material-module.ts`) that exports only a subset of Angular Material modules. If you use
+  a component not listed there (e.g. `MatSlider`, `MatProgressSpinner`), you must add its module to
+  `MaterialModule` or import it directly in your standalone component.
+- **`SpinnerService` uses `show()` and `hide()`** — not `start()`/`stop()`. Always read the existing service
+  before calling it from a new component.
+- **Angular AOT is the gatekeeper.** The production build (`ng build --configuration production`) catches
+  template errors (unknown elements, missing property bindings) that `npx tsc` and `eslint` miss. Always
+  run `cd frontend && npm run build` before pushing frontend changes.
 
 ## Persisted settings
 
