@@ -54,6 +54,11 @@ Before considering work done:
 - **Lint + build clean.** `npm run lint` and `npm run server:build` pass. For frontend changes, `cd frontend && npm run build` also passes.
 - **Circular imports must not exist.** `esbuild.config.ts` runs madge first — any circular dependency in `server/` aborts.
 - **Types are explicit.** No `any` at exported boundaries (use `unknown` + narrowing). Validate all external input with zod.
+- **Documentation stays current.** Every fork-specific feature or user-visible change must update the relevant docs:
+  `.github/README.md` (landing page), `docs/welcome.md` (introduction), `docs/index.md` (VitePress home),
+  `docs/Configuration.md` (env vars and settings), and `CHANGELOG.md` (fork-specific changes).
+  When the list of fork enhancements grows, update the messaging in all documentation surfaces — not just the
+  page about a single feature.
 
 ## Code style
 
