@@ -132,6 +132,7 @@ docker compose logs voidauth
 
 ### Customization
 - Custom logo, title, and theme colour
+- Branding managed via Admin → Settings page (colour picker, logo upload)
 - Configurable email templates via EJS files
 - Dark/light mode support
 

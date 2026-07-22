@@ -1,5 +1,9 @@
 # Configuration
 
+## Admin Settings
+
+Some settings can be managed from the **Admin → Settings** page in the web interface. Settings configured there override environment variable values where both exist. Changes take effect immediately after saving.
+
 ## Users and Apps
 
 User, OIDC App, and ProxyAuth Domain management is performed in the web interface. You can view the documentation on user management on the [User Management](User-Management.md) page.

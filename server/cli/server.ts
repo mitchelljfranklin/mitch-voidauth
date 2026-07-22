@@ -334,6 +334,20 @@ export async function serve() {
         // Create initial admin user and group
         if (initialRun) {
           await createInitialAdmin()
+
+          // Load DB-backed settings, overriding env var defaults
+          try {
+            const { getAllSettings } = await import('../db/settings')
+            const { applySettingsFromDB } = await import('../util/config')
+            const settings = await getAllSettings()
+            applySettingsFromDB(settings)
+          } catch (settingsError) {
+            logger({
+              level: 'warn',
+              message: 'Failed to load settings from database — using env var defaults.',
+              errors: settingsError instanceof Error ? [settingsError] : [{ message: String(settingsError) }],
+            })
+          }
         }
 
         // update provider cookie keys

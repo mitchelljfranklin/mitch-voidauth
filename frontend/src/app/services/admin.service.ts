@@ -19,6 +19,8 @@ import type { EmailsResponse } from '@shared/api-response/admin/EmailsResponse'
 import type { SortDirection } from '@angular/material/sort'
 import type { ClientResponse } from '@shared/api-response/ClientResponse'
 import type { AdminConfig } from '@shared/api-response/admin/AdminConfig'
+import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
+import type { UpdateSettingsRequest } from '@shared/api-request/admin/UpdateSettingsRequest'
 
 @Injectable({
   providedIn: 'root',
@@ -171,5 +173,17 @@ export class AdminService {
     return firstValueFrom(this.http.post<null>(`/api/admin/send_test_email`, {
       email,
     }))
+  }
+
+  async settings() {
+    return firstValueFrom(this.http.get<SettingsResponse>('/api/admin/settings'))
+  }
+
+  async updateSettings(data: UpdateSettingsRequest) {
+    return firstValueFrom(this.http.patch<null>('/api/admin/settings', data))
+  }
+
+  async uploadLogo(file: File) {
+    return firstValueFrom(this.http.post<{ logo: string }>('/api/admin/settings/logo', file))
   }
 }

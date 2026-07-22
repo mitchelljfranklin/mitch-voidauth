@@ -112,3 +112,23 @@ patterns that require the reader to hold complex state in their head:
 - **Original Dockerfile** requires `dhi.io` login (private hardened node image). Fork builds use `Dockerfile.fork` which avoids this.
 - **Multi-arch** (`linux/amd64,linux/arm64`) is needed for ARM64/Portainer deployments.
 - **`release.yml`** is upstream's workflow — it needs `DOCKERHUB_TOKEN` secret your fork doesn't have. Ignore its failures; use `release-fork.yml` instead.
+
+## Persisted settings
+
+- **`flag` table** — key-value store for runtime settings (`name` TEXT PK, `value` TEXT, `createdAt`, `updatedAt`).
+  Used for admin-configurable settings and feature flags.
+- **Settings resolution** — DB flag value overrides env var default. `config.ts` reads flags on startup; settings
+  routes in `admin.ts` handle updates via the Admin → Settings page.
+- Boolean values are stored as `'true'`/`'false'` strings, parsed with `zod.stringbool()`.
+- Use `.onConflict(['name']).merge(['value', 'updatedAt'])` for setting upserts.
+
+## DB backend portability
+
+This project supports both PostgreSQL and SQLite. When writing database code:
+- Use Knex schema builder — never raw SQL unless guarded with
+  `knex.client.config.client === 'pg'` or `knex.client.config.client === 'sqlite3'`
+- Boolean columns: typed as `boolean | number` (SQLite uses 0/1, PG uses true/false)
+- Date columns: typed as `Date | number`, always use `{ useTz: true }`
+- Foreign key columns use `.references().inTable().onDelete('CASCADE')`
+- New non-nullable columns: add nullable → backfill → drop nullable (3-step migration)
+- All `knex.schema` and query operations must work on both backends — test against both if query logic differs

@@ -1,0 +1,124 @@
+<div class="container">
+  <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+    <h2>{{ "admin.settings.title" | translate }}</h2>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "admin.settings.sections.general" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>APP_TITLE</mat-label>
+          <input matInput formControlName="APP_TITLE" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>DEFAULT_REDIRECT</mat-label>
+          <input matInput formControlName="DEFAULT_REDIRECT" placeholder="https://example.com" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CONTACT_EMAIL</mat-label>
+          <input matInput formControlName="CONTACT_EMAIL" placeholder="admin@example.com" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "admin.settings.sections.security" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="toggle-list">
+        <mat-slide-toggle formControlName="SIGNUP">
+          {{ "admin.settings.labels.signup" | translate }}
+        </mat-slide-toggle>
+        <mat-slide-toggle formControlName="SIGNUP_REQUIRES_APPROVAL">
+          {{ "admin.settings.labels.signup-requires-approval" | translate }}
+        </mat-slide-toggle>
+        <mat-slide-toggle formControlName="EMAIL_VERIFICATION">
+          {{ "admin.settings.labels.email-verification" | translate }}
+        </mat-slide-toggle>
+        <mat-slide-toggle formControlName="MFA_REQUIRED">
+          {{ "admin.settings.labels.mfa-required" | translate }}
+        </mat-slide-toggle>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "admin.settings.sections.access" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ "admin.settings.labels.password-strength" | translate }}</mat-label>
+          <mat-slider [min]="0" [max]="4" [step]="1" [discrete]="true" [showTickMarks]="true">
+            <input matSliderThumb formControlName="PASSWORD_STRENGTH" />
+          </mat-slider>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ "admin.settings.labels.api-ratelimit" | translate }}</mat-label>
+          <input matInput type="number" formControlName="API_RATELIMIT" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ "admin.settings.labels.admin-emails" | translate }}</mat-label>
+          <mat-select formControlName="ADMIN_EMAILS">
+            <mat-option [value]="''">Default</mat-option>
+            <mat-option value="false">Disabled</mat-option>
+            <mat-option value="hourly">Hourly</mat-option>
+            <mat-option value="daily">Daily</mat-option>
+            <mat-option value="weekly">Weekly</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ "admin.settings.labels.default-user-expires-in" | translate }}</mat-label>
+          <input matInput formControlName="DEFAULT_USER_EXPIRES_IN" placeholder="3 months" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "admin.settings.sections.appearance" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>APP_COLOR</mat-label>
+          <input matInput formControlName="APP_COLOR" placeholder="#906bc7" type="color" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>APP_FONT</mat-label>
+          <input matInput formControlName="APP_FONT" placeholder="monospace" />
+        </mat-form-field>
+
+        <div class="logo-section">
+          <label>{{ "admin.settings.labels.logo" | translate }}</label>
+          @if (logoUrl) {
+            <img [src]="logoUrl" class="logo-preview" alt="Logo preview" />
+          }
+          <input type="file" accept="image/svg+xml,image/png" (change)="onLogoSelected($event)" />
+          @if (logoSaving) {
+            <mat-spinner [diameter]="24"></mat-spinner>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "admin.settings.sections.email" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>SMTP_FROM</mat-label>
+          <input matInput formControlName="SMTP_FROM" placeholder="app@example.com" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <button mat-flat-button type="submit" [disabled]="settingsForm.invalid">{{ "admin.common.actions.save" | translate }}</button>
+  </form>
+</div>
