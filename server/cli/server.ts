@@ -343,7 +343,7 @@ export async function serve() {
             applySettingsFromDB(settings)
           } catch (settingsError) {
             logger({
-              level: 'warn',
+              level: 'error',
               message: 'Failed to load settings from database — using env var defaults.',
               errors: settingsError instanceof Error ? [settingsError] : [{ message: String(settingsError) }],
             })
