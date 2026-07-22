@@ -192,6 +192,7 @@ function assignConfigValue(key: keyof Config, value: string | undefined) {
     case 'LDAP_SYNC_GROUP_MEMBERS_ATTRIBUTE':
     case 'LDAP_SYNC_GROUP_UNIQUE_IDENTIFIER_ATTRIBUTE':
     case 'LDAP_SYNC_GROUP_NAME_ATTRIBUTE':
+    case 'APP_LOGO':
       appConfig[key] = stringOnly(value) ?? appConfig[key]
       break
 
