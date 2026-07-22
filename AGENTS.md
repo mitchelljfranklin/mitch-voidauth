@@ -161,6 +161,10 @@ This project supports both PostgreSQL and SQLite. When writing database code:
 - **`ADMIN_EMAILS` and `DEFAULT_USER_EXPIRES_IN` have their own parsing logic** in `assignConfigValue()`.
   When setting these from DB-backed settings, pass the string value through `assignConfigValue()` rather than
   assigning directly — it handles `stringDuration()`, `posInt()`, and `booleanString(false)` parsing.
+- **Every new Config class property must have a matching case in `assignConfigValue()`.** The switch's
+  `default` case assigns `appConfig[key] = stringOnly(value) ?? appConfig[key]` which only type-checks
+  for properties that are typed `string`. Adding a property with `string | undefined` (optional) or any
+  other type to Config without adding an explicit case will fail `npx tsc`.
 - **Circular dependency avoidance:** `config.ts` cannot import from `server/db/` because those modules
   import `config.ts` back. Use an injected-function pattern: config exports a function that takes data,
   and the caller (e.g. `server/cli/server.ts`) reads from DB and passes it in.
