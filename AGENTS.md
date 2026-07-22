@@ -78,6 +78,31 @@ Before considering work done:
 | Implicit `any` from untyped catch | Hides type errors until runtime | Type catch as `unknown` |
 | Variables declared far from use | Forces reader to scroll and remember | Declare at point of first use |
 
+### Code should look human-written
+
+Good code reads like a human wrote it for another human to maintain. Avoid
+patterns that require the reader to hold complex state in their head:
+
+- **Prefer clarity over cleverness.** A 5-line `if/else if/else` chain is
+  better than a nested ternary or a `switch/case` that requires decoding
+  each branch. No one should squint at a line to understand it.
+- **Pass the "read aloud" test.** If you cannot read a line out loud and
+  have it sound like a plain-English instruction, rename the variables
+  until you can.
+- **Errors should be specific.** Match on the actual error type or code.
+  Re-throw what you cannot handle. A generic "something went wrong"
+  tells the caller nothing.
+- **No mechanical boilerplate.** Avoid patterns that look copy-pasted
+  across files — extract the commonality. Repeated `try/catch` wrapping,
+  identical guard clauses, or cookie-cutter component shells are a
+  signal that an abstraction is missing.
+- **One thought per line in practice.** A line like
+  `.filter().map().sort().slice()` chains four unrelated operations in a
+  single breath — break them into named intermediate variables.
+- **Side effects should be visible.** Never hide mutation inside getters
+  or property access (`obj.foo` looks pure). If something changes state,
+  make it an explicit method call (`obj.getFoo()` or `obj.fetchFoo()`).
+
 ## Gotchas
 
 - **`npm ci` is strict.** If `package.json` lists a dependency not in `package-lock.json`, it fails. Run `npm install --package-lock-only` to sync the lockfile after adding deps.
