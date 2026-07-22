@@ -186,8 +186,12 @@ export class AdminService {
   async uploadLogo(file: File) {
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.onload = () => {
+        resolve(reader.result as string)
+      }
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'))
+      }
       reader.readAsDataURL(file)
     })
     return firstValueFrom(this.http.post<{ logo: string }>('/api/admin/settings/logo', {
