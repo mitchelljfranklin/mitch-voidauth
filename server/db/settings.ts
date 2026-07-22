@@ -7,8 +7,8 @@ import type { SettingsResponse } from '@shared/api-response/admin/SettingsRespon
 
 const SETTING_PREFIX = 'SETTING_'
 
-type SettingKey =
-  | 'APP_TITLE'
+type SettingKey
+  = 'APP_TITLE'
   | 'APP_COLOR'
   | 'APP_FONT'
   | 'CONTACT_EMAIL'
