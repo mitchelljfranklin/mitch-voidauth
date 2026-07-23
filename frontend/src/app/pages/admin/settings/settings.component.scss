@@ -1,0 +1,41 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+mat-card {
+  margin-bottom: 16px;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logo-preview {
+  max-width: 128px;
+  max-height: 128px;
+  object-fit: contain;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 4px;
+  padding: 4px;
+}
+
+button[type="submit"] {
+  margin-top: 16px;
+  float: right;
+}

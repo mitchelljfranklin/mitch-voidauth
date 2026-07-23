@@ -861,3 +861,76 @@ adminRouter.post('/send_test_email',
 
     res.send()
   })
+
+// Settings
+
+import { getAllSettings, setSetting } from '../db/settings'
+import { updateSettingsValidator } from '@shared/api-request/admin/UpdateSettingsRequest'
+import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
+import { applySettingsFromDB } from '../util/config'
+import { generateTheme } from '../util/theme'
+
+adminRouter.get('/settings', async (_req, res) => {
+  const settings = await getAllSettings()
+  res.send(settings satisfies SettingsResponse)
+})
+
+adminRouter.patch('/settings',
+  zodValidate({
+    body: updateSettingsValidator,
+  }), async (req, res) => {
+    for (const [key, value] of Object.entries(req.body)) {
+      if (value != null && typeof value === 'string') {
+        await setSetting(key as never, value)
+      } else if (value != null && typeof value === 'boolean') {
+        await setSetting(key as never, String(value))
+      } else if (value != null && typeof value === 'number') {
+        await setSetting(key as never, String(value))
+      } else {
+        await setSetting(key as never, null)
+      }
+    }
+
+    const settings = await getAllSettings()
+    applySettingsFromDB(settings)
+
+    // Regenerate theme CSS so color changes take effect immediately
+    try {
+      await generateTheme()
+    } catch (themeError) {
+      logger({
+        level: 'error',
+        message: 'Failed to regenerate theme after settings save.',
+        errors: themeError instanceof Error ? [themeError] : [{ message: String(themeError) }],
+      })
+    }
+
+    logger({
+      level: 'info',
+      message: 'Admin updated settings.',
+    })
+
+    res.send()
+  })
+
+const MAX_LOGO_SIZE_BYTES = 256 * 1024
+
+const logoUploadValidator = {
+  dataUrl: zod.string().startsWith('data:image/', 'Must be a data URL starting with data:image/'),
+  mimeType: zod.enum(['image/svg+xml', 'image/png', 'image/jpeg']),
+}
+
+adminRouter.post('/settings/logo',
+  zodValidate({
+    body: logoUploadValidator,
+  }), async (req, res) => {
+    const { dataUrl } = req.body
+
+    if (Buffer.byteLength(dataUrl, 'utf8') > MAX_LOGO_SIZE_BYTES * 2) {
+      res.status(413).send({ message: 'Logo exceeds maximum size of 256 KB.' })
+      return
+    }
+
+    await setSetting('APP_LOGO', dataUrl)
+    res.send({ logo: dataUrl })
+  })

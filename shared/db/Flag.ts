@@ -4,6 +4,7 @@ export type Flag = {
   name: string
   value: string | null
   createdAt: Date | number
+  updatedAt?: Date | number
 }
 
 const _typeCheck: DBColumnTypesCheck<Flag> = true

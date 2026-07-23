@@ -19,6 +19,8 @@ import type { EmailsResponse } from '@shared/api-response/admin/EmailsResponse'
 import type { SortDirection } from '@angular/material/sort'
 import type { ClientResponse } from '@shared/api-response/ClientResponse'
 import type { AdminConfig } from '@shared/api-response/admin/AdminConfig'
+import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
+import type { UpdateSettingsRequest } from '@shared/api-request/admin/UpdateSettingsRequest'
 
 @Injectable({
   providedIn: 'root',
@@ -170,6 +172,31 @@ export class AdminService {
   async sendTestEmail(email: string) {
     return firstValueFrom(this.http.post<null>(`/api/admin/send_test_email`, {
       email,
+    }))
+  }
+
+  async settings() {
+    return firstValueFrom(this.http.get<SettingsResponse>('/api/admin/settings'))
+  }
+
+  async updateSettings(data: UpdateSettingsRequest) {
+    return firstValueFrom(this.http.patch<null>('/api/admin/settings', data))
+  }
+
+  async uploadLogo(file: File) {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        resolve(reader.result as string)
+      }
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'))
+      }
+      reader.readAsDataURL(file)
+    })
+    return firstValueFrom(this.http.post<{ logo: string }>('/api/admin/settings/logo', {
+      dataUrl,
+      mimeType: file.type,
     }))
   }
 }

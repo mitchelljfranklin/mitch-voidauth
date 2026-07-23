@@ -52,8 +52,16 @@ Before considering work done:
 
 - **No stubs.** No `TODO`/`FIXME`, no empty/throwing function bodies, no dead or commented-out code. Intentional empty states must be clearly labelled.
 - **Lint + build clean.** `npm run lint` and `npm run server:build` pass. For frontend changes, `cd frontend && npm run build` also passes.
+- **Run `npx tsc` before pushing server changes.** The Dockerfile CI runs `tsc` directly, but locally
+  `server:build` only validates via esbuild (which skips stricter type checks). If you only run `server:build`,
+  type errors will surface in CI.
 - **Circular imports must not exist.** `esbuild.config.ts` runs madge first — any circular dependency in `server/` aborts.
 - **Types are explicit.** No `any` at exported boundaries (use `unknown` + narrowing). Validate all external input with zod.
+- **Documentation stays current.** Every fork-specific feature or user-visible change must update the relevant docs:
+  `.github/README.md` (landing page), `docs/welcome.md` (introduction), `docs/index.md` (VitePress home),
+  `docs/Configuration.md` (env vars and settings), and `CHANGELOG.md` (fork-specific changes).
+  When the list of fork enhancements grows, update the messaging in all documentation surfaces — not just the
+  page about a single feature.
 
 ## Code style
 
@@ -112,3 +120,59 @@ patterns that require the reader to hold complex state in their head:
 - **Original Dockerfile** requires `dhi.io` login (private hardened node image). Fork builds use `Dockerfile.fork` which avoids this.
 - **Multi-arch** (`linux/amd64,linux/arm64`) is needed for ARM64/Portainer deployments.
 - **`release.yml`** is upstream's workflow — it needs `DOCKERHUB_TOKEN` secret your fork doesn't have. Ignore its failures; use `release-fork.yml` instead.
+
+## Frontend gotchas
+
+- **Check `MaterialModule` before using any Material component.** The project uses a shared `MaterialModule`
+  (`frontend/src/app/material-module.ts`) that exports only a subset of Angular Material modules. If you use
+  a component not listed there (e.g. `MatSlider`, `MatProgressSpinner`), you must add its module to
+  `MaterialModule` or import it directly in your standalone component.
+- **`SpinnerService` uses `show()` and `hide()`** — not `start()`/`stop()`. Always read the existing service
+  before calling it from a new component.
+- **Angular AOT is the gatekeeper.** The production build (`ng build --configuration production`) catches
+  template errors (unknown elements, missing property bindings) that `npx tsc` and `eslint` miss. Always
+  run `cd frontend && npm run build` before pushing frontend changes.
+
+## Persisted settings
+
+- **`flag` table** — key-value store for runtime settings (`name` TEXT PK, `value` TEXT, `createdAt`, `updatedAt`).
+  Used for admin-configurable settings and feature flags.
+- **Settings resolution** — DB flag value overrides env var default. `config.ts` reads flags on startup; settings
+  routes in `admin.ts` handle updates via the Admin → Settings page.
+- Boolean values are stored as `'true'`/`'false'` strings, parsed with `zod.stringbool()`.
+- Use `.onConflict(['name']).merge(['value', 'updatedAt'])` for setting upserts.
+
+## DB backend portability
+
+This project supports both PostgreSQL and SQLite. When writing database code:
+- Use Knex schema builder — never raw SQL unless guarded with
+  `knex.client.config.client === 'pg'` or `knex.client.config.client === 'sqlite3'`
+- Boolean columns: typed as `boolean | number` (SQLite uses 0/1, PG uses true/false)
+- Date columns: typed as `Date | number`, always use `{ useTz: true }`
+- Foreign key columns use `.references().inTable().onDelete('CASCADE')`
+- New non-nullable columns: add nullable → backfill → drop nullable (3-step migration)
+- All `knex.schema` and query operations must work on both backends — test against both if query logic differs
+
+## Config class quirks
+
+- **`Config` is not a real class.** It's a plain object with typed property defaults — no methods live on it.
+  `assignConfigValue()` is a standalone function, not a method. To extend config behavior, add standalone
+  functions (see `applySettingsFromDB()`).
+- **`ADMIN_EMAILS` and `DEFAULT_USER_EXPIRES_IN` have their own parsing logic** in `assignConfigValue()`.
+  When setting these from DB-backed settings, pass the string value through `assignConfigValue()` rather than
+  assigning directly — it handles `stringDuration()`, `posInt()`, and `booleanString(false)` parsing.
+- **Every new Config class property must have a matching case in `assignConfigValue()`.** The switch's
+  `default` case assigns `appConfig[key] = stringOnly(value) ?? appConfig[key]` which only type-checks
+  for properties that are typed `string`. Adding a property with `string | undefined` (optional) or any
+  other type to Config without adding an explicit case will fail `npx tsc`.
+- **Circular dependency avoidance:** `config.ts` cannot import from `server/db/` because those modules
+  import `config.ts` back. Use an injected-function pattern: config exports a function that takes data,
+  and the caller (e.g. `server/cli/server.ts`) reads from DB and passes it in.
+- **Settings are loaded on first maintenance run** inside `doMaintenance()` in `server/cli/server.ts`,
+  after `createInitialAdmin()`. The ALS context and DB transaction are already set up there.
+- After loading or changing settings that affect UI appearance (`APP_COLOR`, `APP_FONT`, `APP_LOGO`),
+  call `generateTheme()` to regenerate the Angular Material theme CSS.
+- **Logo uploads use JSON, not raw binary.** `express.json()` middleware runs before all route handlers
+  and drains the `req` stream. Never use `req.on('data')` / `req.on('end')` on routes behind Express body
+  parsers — the stream will already be consumed. Instead, read the file into a data URL on the frontend
+  (via `FileReader.readAsDataURL()`) and send it as a normal JSON body with `{ dataUrl, mimeType }`.

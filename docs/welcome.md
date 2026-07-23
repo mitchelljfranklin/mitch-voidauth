@@ -4,13 +4,19 @@
 
 Mitch‑VoidAuth is a fork of [VoidAuth](https://voidauth.app) — an open-source SSO authentication and user management platform built by [Derek Paschal](https://github.com/notquitenothing). VoidAuth is a mature, actively maintained SSO provider that stands guard in front of your self-hosted applications.
 
-This fork adds **LDAP Directory Sync**: automatic user and group synchronisation from external LDAP directories (Active Directory, OpenLDAP, 389 DS, FreeIPA, LLDAP, and more).
+This fork builds on VoidAuth with several enhancements:
+
+- **LDAP Directory Sync** — automatic user and group synchronisation from external LDAP directories (Active Directory, OpenLDAP, 389 DS, FreeIPA, LLDAP, and more). Synced users authenticate via LDAP simple bind against the remote directory.
+- **Admin Settings page** — configure app behaviour from the web interface without editing environment variables. Toggle signups, set MFA requirements, change branding (colour picker + logo upload), adjust rate limits — changes take effect immediately.
+- **Multi-architecture Docker images** — native builds for both `linux/amd64` and `linux/arm64`, compatible with cloud VMs, Raspberry Pi, and Portainer deployments.
+- **VitePress documentation** — a fully searchable docs site at [auth.mitchforge.com](https://auth.mitchforge.com) with setup guides, LDAP sync configuration examples, OIDC app guides for 25+ applications, and a troubleshooting reference.
+- **Enhanced CI/CD** — automated multi-arch Docker builds via GitHub Actions, triggered on published releases.
 
 ## Why a fork
 
 VoidAuth already ships a built-in LDAP server — it serves directory data to LDAP client applications. But if your organisation already has an LDAP directory that is the source of truth for users and groups, you need the reverse: LDAP as a *source*, syncing identities *into* VoidAuth.
 
-Mitch‑VoidAuth bridges that gap. Configure a few environment variables, and users and groups flow into VoidAuth automatically. No manual user import. No double-entry of group memberships. LDAP-synced users log in with their existing directory credentials.
+Mitch‑VoidAuth bridges that gap with LDAP Directory Sync — the primary reason this fork exists. Beyond that, the Admin Settings page and operational enhancements make day-to-day administration smoother without waiting on upstream.
 
 ## Features
 
@@ -29,6 +35,6 @@ All upstream VoidAuth features are included:
 
 ## Upstream Credits
 
-Mitch‑VoidAuth is built on [VoidAuth](https://github.com/voidauth/voidauth) by [Derek Paschal](https://github.com/notquitenothing). The LDAP Directory Sync feature is the only addition — everything else is VoidAuth.
+Mitch‑VoidAuth is built on [VoidAuth](https://github.com/voidauth/voidauth) by [Derek Paschal](https://github.com/notquitenothing). The enhancements listed above are built on VoidAuth's foundation — all core SSO, OIDC, ProxyAuth, and user management features are VoidAuth.
 
-This fork periodically merges changes from upstream to stay current. See the [Getting Started](/Getting-Started) page for setup instructions, or jump to the [LDAP Sync](/LDAP-Sync) page for the LDAP integration details.
+This fork periodically merges changes from upstream to stay current. See the [Getting Started](/Getting-Started) page for setup instructions, or jump to [LDAP Sync](/LDAP-Sync) for directory integration details.

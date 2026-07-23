@@ -26,6 +26,7 @@ class Config {
 
   APP_COLOR = '#906bc7'
   APP_FONT = ''
+  APP_LOGO?: string
 
   // Database config
   DB_ADAPTER = 'postgres'
@@ -191,6 +192,7 @@ function assignConfigValue(key: keyof Config, value: string | undefined) {
     case 'LDAP_SYNC_GROUP_MEMBERS_ATTRIBUTE':
     case 'LDAP_SYNC_GROUP_UNIQUE_IDENTIFIER_ATTRIBUTE':
     case 'LDAP_SYNC_GROUP_NAME_ATTRIBUTE':
+    case 'APP_LOGO':
       appConfig[key] = stringOnly(value) ?? appConfig[key]
       break
 
@@ -697,6 +699,49 @@ export function sessionDomainReaches(hostName: string): boolean {
   // Add dot to start of sessionDomain if it doesn't already have one, to prevent false positives
   const dotSD = sessionDomain && !sessionDomain.startsWith('.') ? '.' + sessionDomain : sessionDomain
   return targetDomain === sessionDomain || !!(dotSD && hostName.endsWith(dotSD))
+}
+
+import type { SettingsResponse } from '@shared/api-response/admin/SettingsResponse'
+
+/**
+ * Apply DB-backed settings, overriding env var defaults where present.
+ * Call after database connection is established.
+ */
+export function applySettingsFromDB(settings: SettingsResponse) {
+  if (settings.APP_TITLE != null) {
+    appConfig.APP_TITLE = settings.APP_TITLE
+  }
+  appConfig.APP_COLOR = settings.APP_COLOR ?? appConfig.APP_COLOR
+  appConfig.APP_FONT = settings.APP_FONT ?? appConfig.APP_FONT
+  if (settings.CONTACT_EMAIL != null) {
+    appConfig.CONTACT_EMAIL = settings.CONTACT_EMAIL || undefined
+  }
+  if (settings.DEFAULT_REDIRECT != null) {
+    appConfig.DEFAULT_REDIRECT = settings.DEFAULT_REDIRECT || undefined
+  }
+  appConfig.SIGNUP = settings.SIGNUP
+  appConfig.SIGNUP_REQUIRES_APPROVAL = settings.SIGNUP_REQUIRES_APPROVAL
+  appConfig.EMAIL_VERIFICATION = settings.EMAIL_VERIFICATION
+  appConfig.MFA_REQUIRED = settings.MFA_REQUIRED
+  appConfig.PASSWORD_STRENGTH = settings.PASSWORD_STRENGTH
+  appConfig.API_RATELIMIT = settings.API_RATELIMIT
+  if (settings.ADMIN_EMAILS != null) {
+    assignConfigValue('ADMIN_EMAILS', settings.ADMIN_EMAILS)
+  }
+  if (settings.DEFAULT_USER_EXPIRES_IN != null) {
+    assignConfigValue('DEFAULT_USER_EXPIRES_IN', settings.DEFAULT_USER_EXPIRES_IN)
+  }
+  if (settings.SMTP_FROM != null) {
+    appConfig.SMTP_FROM = settings.SMTP_FROM || undefined
+  }
+  if (settings.APP_LOGO != null) {
+    appConfig.APP_LOGO = settings.APP_LOGO || undefined
+  }
+
+  logger({
+    level: 'info',
+    message: 'Applied settings from database.',
+  })
 }
 
 //

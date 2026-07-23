@@ -3,25 +3,28 @@
 [![Build](https://img.shields.io/github/actions/workflow/status/mitchelljfranklin/mitch-voidauth/release-fork.yml?label=build)](https://github.com/mitchelljfranklin/mitch-voidauth/actions)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-orange)](LICENSE)
 
-> VoidAuth with LDAP Directory Sync — a fork of [voidauth/voidauth](https://github.com/voidauth/voidauth). Single Sign-On for your self-hosted universe, now with automatic user and group synchronisation from external LDAP directories.
+> An enhanced fork of VoidAuth — SSO for your self-hosted universe, with LDAP Directory Sync, runtime admin configuration, multi-arch Docker images, and all upstream features.
 
 ---
 
 ## What is Mitch‑VoidAuth
 
-Mitch‑VoidAuth is a fork of [VoidAuth](https://voidauth.app) — an open-source SSO authentication and user management platform built by [Derek Paschal](https://github.com/notquitenothing). VoidAuth is a mature, actively maintained SSO provider with OIDC, passkey support, proxy authentication, and an LDAP server.
+Mitch‑VoidAuth is a fork of [VoidAuth](https://voidauth.app) — an open-source SSO authentication and user management platform built by [Derek Paschal](https://github.com/notquitenothing). This fork enhances VoidAuth with several features while keeping all upstream capabilities:
 
-This fork adds **LDAP Directory Sync**: the ability to pull users and groups from an external LDAP directory (Active Directory, OpenLDAP, 389 DS, LLDAP, etc.) into VoidAuth on a configurable schedule. Synced users authenticate via LDAP simple bind against the remote directory — no password hashes stored locally.
+- **LDAP Directory Sync** — the headline feature. Pull users and groups from Active Directory, OpenLDAP, 389 DS, LLDAP, and any LDAPv3 directory into VoidAuth on a configurable schedule.
+- **Admin Settings** — configure app behaviour from the web interface. Toggle signups, set MFA requirements, change branding (colour picker + logo upload), adjust rate limits, and more — no environment variable edits or restarts needed.
+- **Multi-architecture Docker images** — native builds for both `linux/amd64` and `linux/arm64`, making it compatible with everything from cloud VMs to Raspberry Pi and Portainer deployments.
+- **VitePress documentation** — a searchable docs site at [auth.mitchforge.com](https://auth.mitchforge.com) covering setup, configuration, LDAP sync, OIDC guides, and more.
 
-All upstream features are included and this fork periodically merges changes from [voidauth/voidauth](https://github.com/voidauth/voidauth) to stay current with bug fixes and new features.
+All upstream features are included and this fork periodically merges changes from [voidauth/voidauth](https://github.com/voidauth/voidauth) to stay current.
 
 ---
 
 ## Why Mitch‑VoidAuth
 
-VoidAuth already ships a built-in LDAP server — it *serves* directory data to LDAP clients. But if your organisation already has an LDAP directory (Active Directory, OpenLDAP, FreeIPA) that is the source of truth for your users and groups, you need the reverse: LDAP as a *source*, syncing identities *into* VoidAuth.
+VoidAuth is an excellent SSO platform, but it has no built-in mechanism to consume identities from an existing directory. If your users and groups already live in Active Directory, OpenLDAP, or FreeIPA, you either maintain duplicate accounts or do without SSO.
 
-Mitch‑VoidAuth bridges that gap. Configure a few environment variables, and users and groups appear in VoidAuth automatically. No manual user import, no double-entry of group memberships. LDAP-synced users log into VoidAuth with their existing directory credentials.
+Mitch‑VoidAuth fills that gap with **LDAP Directory Sync** — the primary reason this fork exists. Beyond that, it layers on operational improvements that make day-to-day administration smoother: a settings page in the admin panel, multi-arch images for diverse hardware, and comprehensive documentation.
 
 It is intended for:
 
@@ -132,6 +135,7 @@ docker compose logs voidauth
 
 ### Customization
 - Custom logo, title, and theme colour
+- Branding managed via Admin → Settings page (colour picker, logo upload)
 - Configurable email templates via EJS files
 - Dark/light mode support
 
