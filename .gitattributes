@@ -1,0 +1,4 @@
+docs/* merge=ours
+SECURITY.md merge=ours
+.github/ISSUE_TEMPLATE/* merge=ours
+.github/PULL_REQUEST_TEMPLATE.md merge=ours

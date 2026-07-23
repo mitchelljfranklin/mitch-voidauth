@@ -14,6 +14,7 @@
 - `.github/workflows/docs-fork.yml` — builds VitePress docs and deploys to GitHub Pages
 - `compose.fork.yml` — points to fork's GHCR image, enables LDAP port 3890
 - `.github/README.md` — fork's custom README with LDAP sync info. Root `README.md` is upstream's (kept clean for syncing).
+- `.gitattributes` — defines `merge=ours` for docs/ and template files to prevent upstream overwrites
 - `.github/ISSUE_TEMPLATE/` — fork-specific issue templates (YAML forms with LDAP sync fields)
 - `.github/PULL_REQUEST_TEMPLATE.md` — fork-specific PR template
 - `SECURITY.md` — fork-specific security policy (reporting, scope, deployment checklist)
@@ -33,6 +34,9 @@ git merge main
 ```
 
 When upstream's `Dockerfile` changes, mirror the change into `Dockerfile.fork` (only the `FROM dhi.io/...` line differs).
+
+`.gitattributes` uses `merge=ours` for `docs/`, `SECURITY.md`, issue templates, and PR template —
+these files were completely rewritten for the fork and should never be overwritten by upstream during a merge.
 
 ## Commands
 
