@@ -1,19 +1,14 @@
-import { zxcvbn as zxcvbnLib, zxcvbnOptions } from '@zxcvbn-ts/core'
+import { zxcvbnOptions, zxcvbn, type ZxcvbnResult } from '@zxcvbn-ts/core'
 import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common'
 import * as zxcvbnEnPackage from '@zxcvbn-ts/language-en'
 
-const options = {
-  // recommended
+zxcvbnOptions.setOptions({
   dictionary: {
     ...zxcvbnCommonPackage.dictionary,
     ...zxcvbnEnPackage.dictionary,
   },
-  // recommended
   graphs: zxcvbnCommonPackage.adjacencyGraphs,
-  // recommended
   useLevenshteinDistance: true,
-}
+})
 
-zxcvbnOptions.setOptions(options)
-
-export const passwordStrength = zxcvbnLib
+export const passwordStrength = (password: string): ZxcvbnResult => zxcvbn(password)

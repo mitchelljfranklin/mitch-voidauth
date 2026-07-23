@@ -38,6 +38,7 @@ export async function serve() {
   provider.proxy = true
 
   app.use(helmet({
+    crossOriginOpenerPolicy: false,
     contentSecurityPolicy: {
       // use safe defaults, and also...
       useDefaults: true,
