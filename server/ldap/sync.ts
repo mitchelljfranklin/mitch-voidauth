@@ -28,6 +28,12 @@ import { parseDN } from './util'
 const LDAP_SOURCE = 'ldap'
 
 /**
+ * Creator sentinel used on rows written by the sync; lets later cycles tell
+ * sync-granted memberships apart from those assigned by an admin in the UI.
+ */
+const SYNC_ACTOR_ID = '00000000-0000-0000-0000-000000000000'
+
+/**
  * Extract the first string value of an LDAP entry attribute.
  * Handles both single-value (string) and multi-value (string[])
  * representations returned by the ldapts library.
@@ -222,7 +228,7 @@ export async function syncLDAP(): Promise<void> {
     const syncedUserIds = await syncUsers(ldapUsers)
     await syncGroups(ldapGroups, syncedUserIds)
     await handleRemovedUsers(syncedUserIds)
-    await assignAdminGroupToAdminLDAPUsers(ldapUsers)
+    await assignAdminGroupToAdminLDAPUsers(ldapUsers, ldapGroups)
 
     logger({
       level: 'info',
@@ -501,8 +507,8 @@ async function syncSingleGroup(ldapGroup: Entry, _syncedUserIds: Set<string>): P
       autoAssign: false,
       ldapSource: LDAP_SOURCE,
       ldapExternalId: externalId,
-      createdBy: '00000000-0000-0000-0000-000000000000',
-      updatedBy: '00000000-0000-0000-0000-000000000000',
+      createdBy: SYNC_ACTOR_ID,
+      updatedBy: SYNC_ACTOR_ID,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -534,8 +540,8 @@ async function syncSingleGroup(ldapGroup: Entry, _syncedUserIds: Set<string>): P
         .insert({
           userId,
           groupId,
-          createdBy: '00000000-0000-0000-0000-000000000000',
-          updatedBy: '00000000-0000-0000-0000-000000000000',
+          createdBy: SYNC_ACTOR_ID,
+          updatedBy: SYNC_ACTOR_ID,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -599,8 +605,12 @@ async function handleRemovedUsers(syncedUserIds: Set<string>): Promise<void> {
  * If LDAP_SYNC_ADMIN_GROUP_NAME is configured, find all LDAP
  * users whose memberOf attribute includes a group with a matching
  * CN and add them to VoidAuth's built-in auth_admins group.
+ *
+ * Admin memberships granted by the sync are revoked again when the user
+ * leaves that group; memberships assigned by an admin in the UI carry their
+ * original creator and are never removed automatically.
  */
-async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<void> {
+export async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[], ldapGroups: Entry[]): Promise<void> {
   if (!appConfig.LDAP_SYNC_ADMIN_GROUP_NAME) {
     return
   }
@@ -616,10 +626,26 @@ async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<voi
 
   const adminGroupName = appConfig.LDAP_SYNC_ADMIN_GROUP_NAME
 
+  const directoryHasAdminGroup = ldapGroups.some(g => groupDNMatchesAdminGroup(g.dn, adminGroupName))
+  if (!directoryHasAdminGroup) {
+    logger({
+      level: 'info',
+      message: `LDAP sync: configured admin group '${adminGroupName}' was not found among the synced groups; check for typos in LDAP_SYNC_ADMIN_GROUP_NAME.`,
+    })
+  }
+
   const adminLDAPUsers = ldapUsers.filter((u) => {
     const memberOf = getStringArrayAttribute(u, 'memberOf')
     return memberOf.some(dn => groupDNMatchesAdminGroup(dn, adminGroupName))
   })
+
+  if (directoryHasAdminGroup && adminLDAPUsers.length === 0) {
+    logger({
+      level: 'info',
+      message: `LDAP sync: admin group '${adminGroupName}' exists in the directory but none of the synced users list it in their memberOf attribute.`
+        + ' If members exist, the directory may not populate memberOf (e.g. Active Directory primary group); they will not be made admins.',
+    })
+  }
 
   const ldapSyncedAdminIds = new Set<string>()
 
@@ -637,8 +663,8 @@ async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<voi
       .insert({
         userId: user.id,
         groupId: adminGroup.id,
-        createdBy: '00000000-0000-0000-0000-000000000000',
-        updatedBy: '00000000-0000-0000-0000-000000000000',
+        createdBy: SYNC_ACTOR_ID,
+        updatedBy: SYNC_ACTOR_ID,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -648,25 +674,21 @@ async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<voi
     ldapSyncedAdminIds.add(user.id)
   }
 
-  // LDAP is the source of truth for admins synced from the directory; remove
-  // the built-in admin group from LDAP-synced users that are no longer members
-  // of the configured LDAP admin group.
-  const currentLdapSyncedAdmins = await db().table<User>(TABLES.USER)
-    .select<{ id: string }[]>(`${TABLES.USER}.id`)
-    .join<UserGroup>(TABLES.USER_GROUP, `${TABLES.USER_GROUP}.userId`, `${TABLES.USER}.id`)
-    .join<Group>(TABLES.GROUP, `${TABLES.GROUP}.id`, `${TABLES.USER_GROUP}.groupId`)
-    .where(`${TABLES.GROUP}.name`, ADMIN_GROUP)
-    .whereNotNull(`${TABLES.USER}.ldapSource`)
+  // Revoke only admin memberships that were granted by this sync; manually
+  // assigned memberships keep their original creator and survive every cycle
+  const syncGrantedAdminMemberships = await db().table<UserGroup>(TABLES.USER_GROUP)
+    .select<{ userId: string }[]>('userId')
+    .where({ groupId: adminGroup.id, createdBy: SYNC_ACTOR_ID })
 
-  for (const admin of currentLdapSyncedAdmins) {
-    if (!ldapSyncedAdminIds.has(admin.id)) {
+  for (const membership of syncGrantedAdminMemberships) {
+    if (!ldapSyncedAdminIds.has(membership.userId)) {
       await db().table<UserGroup>(TABLES.USER_GROUP)
         .delete()
-        .where({ userId: admin.id, groupId: adminGroup.id })
+        .where({ userId: membership.userId, groupId: adminGroup.id })
 
       logger({
         level: 'info',
-        message: `LDAP sync: removed admin group from user no longer in LDAP admin group: ${admin.id}`,
+        message: `LDAP sync: removed sync-granted admin group from user no longer in LDAP admin group: ${membership.userId}`,
       })
     }
   }

@@ -24,7 +24,7 @@ Security hardening release based on a full audit. Highlights:
 - **Changed**: successful password reset now invalidates *all* outstanding reset tokens for the account
 - **Changed**: `send_verify_email` no longer re-sends while an active verification exists or the account is already verified (prevents mail-bombing via user UUID)
 - **Added**: TOTP replay protection — an accepted code cannot be reused within its validity window
-- **Changed**: LDAP sync no longer links matching local accounts by default; new opt-in `LDAP_SYNC_LINK_EXISTING_USERS` flag (admin accounts are never linked). LDAP-synced users removed from the configured LDAP admin group lose the built-in admin group automatically
+- **Changed**: LDAP sync no longer links matching local accounts by default; new opt-in `LDAP_SYNC_LINK_EXISTING_USERS` flag (admin accounts are never linked). Admin rights *granted by the sync* are revoked when a user leaves the configured LDAP admin group; manually assigned admin rights on synced accounts are never touched. Warns when the configured admin group is absent from the directory or no synced user's `memberOf` lists it
 - **Fixed**: CSP `script-src` now mirrors the per-build `strict-dynamic` + hash policy that Angular's autoCsp emits as a meta tag, instead of a blanket `'self'` that blocked Angular's inline bootstrap scripts; scripts stay protected at the header level even for cached copies of the page
 - **Added**: `TRUST_PROXY` setting (default `true`) controlling whether `X-Forwarded-*` headers are trusted for rate-limit identity
 - **Changed**: CORS for OIDC endpoints now restricted to origins of each client's registered redirect / post-logout URIs instead of any HTTPS origin

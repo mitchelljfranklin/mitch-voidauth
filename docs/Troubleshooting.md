@@ -24,6 +24,19 @@ The `x-voidauth-session` or `x-voidauth-interaction` cookies could not be set. M
 
 This may also be caused by an invalid `SESSION_DOMAIN` environment variable value (including the default). Browsers may not allow setting cookies on top-level domains (ex. `com`, `co.uk`, `lan`) as well as some public domains (ex. `azurewebsites.net`, `cdn.cloudflare.net`). You can read more at the [Mozilla HTTP Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#define_where_cookies_are_sent) documentation and see the current [Public Suffix List](https://publicsuffix.org/list/) for restricted domains.
 
+### MFA Codes Always Invalid
+
+Authenticator (TOTP) codes are validated against the **server's clock** with a ±30 second tolerance. If the machine running VoidAuth is not time-synchronized and its clock drifts more than that from your authenticator device, every valid code will be rejected.
+
+Check the host:
+
+```bash
+timedatectl                # want: "System clock synchronized: yes"
+timedatectl timesync-status
+```
+
+If synchronization fails (`Packet count: 0`), outbound UDP 123 is likely blocked by your router/firewall — configure alternative servers in `/etc/systemd/timesyncd.conf` (e.g. `NTP=time.cloudflare.com time.google.com`) or allow NTP through. Single-board computers without an RTC battery also start with an unsynchronized clock after every boot until NTP succeeds.
+
 ### Invalid Client
 
 Make sure that an OIDC App has been created, and that the `Client ID` parameter in VoidAuth and the OIDC App match exactly.
