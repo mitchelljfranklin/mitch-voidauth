@@ -40,7 +40,9 @@ export class AuthService {
         redirect: 'manual',
       }))
     } catch (e) {
-      if (e instanceof HttpErrorResponse && e.status > 200 && e.status < 400) {
+      // Browsers report manually-followed redirects as an opaque response with
+      // status 0; the interaction is created server-side either way
+      if (e instanceof HttpErrorResponse && (e.status === 0 || (e.status > 200 && e.status < 400))) {
         return
       }
       console.error(typeof e === 'object' && e && 'error' in e

@@ -34,6 +34,8 @@ Security hardening release based on a full audit. Highlights:
 - **Fixed**: served `index.html` had an empty `<base href>` on root-path deployments, so deep links (e.g. `/logout/<secret>`) resolved JS/CSS assets under the route path and rendered a white page with MIME-type console errors; the base now always ends with `/`
 - **Fixed**: TOTP enrollment confirmation consumed the current timestep, so logging in immediately afterwards with the still-displayed code was rejected as a replay until the 30 s window rolled over; enrollment no longer burns a timestep and replay protection still applies to real logins
 - **Changed**: unresolved asset-like paths (`.js`, `.css`, fonts, images) now return 404 instead of falling through to the SPA index page
+- **Fixed**: cancelling from the MFA screen used browser history to go back, but reaching that screen involves a chain of server redirects — going back re-entered the OIDC flow and bounced straight back to MFA with a stuck loading overlay; cancel now exits deterministically to the home page, logged out
+- **Changed**: the frontend no longer logs a large error object after creating an OIDC interaction; browsers report the intentional manual redirect as an opaque status-0 response, which is now handled as success
 - Login responses now take equal time for unknown usernames and wrong passwords
 
 #### Added

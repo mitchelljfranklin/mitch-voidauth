@@ -158,13 +158,12 @@ export class MfaComponent implements OnInit {
         // If interaction does not still exist do nothing
       }
 
-      if (history.length) {
-        window.history.back()
-      } else {
-        await this.router.navigate(['/'], {
-          replaceUrl: true,
-        })
-      }
+      // Navigate deterministically instead of history.back(); reaching /mfa goes
+      // through a chain of server redirects, so going back lands on a history
+      // entry that immediately restarts the OIDC flow and bounces straight back
+      await this.router.navigate(['/'], {
+        replaceUrl: true,
+      })
     } catch (e) {
       console.error(e)
       this.snackbarService.error('Something went wrong. Try logout from dropdown menu in header.')
