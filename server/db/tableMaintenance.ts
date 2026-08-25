@@ -12,6 +12,8 @@ import appConfig from '../util/config'
 import { getCookieKeys, getJWKs } from './key'
 import { decryptString, encryptString } from './util'
 import type { TOTP } from '@shared/db/TOTP'
+import type { EmailLog } from '@shared/db/EmailLog'
+import { TTLs } from '@shared/constants'
 import { logger } from '../util/logger'
 
 export async function clearAllExpiredEntries() {
@@ -24,6 +26,9 @@ export async function clearAllExpiredEntries() {
   await db().delete().table<PasskeyRegistration>(TABLES.PASSKEY_REGISTRATION).where('expiresAt', '<', new Date())
   await db().delete().table<PasskeyAuthentication>(TABLES.PASSKEY_AUTHENTICATION).where('expiresAt', '<', new Date())
   await db().delete().table<TOTP>(TABLES.TOTP).where('expiresAt', '<', new Date())
+  // email_log rows have no expiry column; retain for a fixed audit window
+  await db().delete().table<EmailLog>(TABLES.EMAIL_LOG)
+    .where('createdAt', '<', new Date(Date.now() - TTLs.EMAIL_LOG * 1000))
 }
 
 export type EncryptedTable = {

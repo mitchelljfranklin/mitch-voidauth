@@ -148,7 +148,7 @@ export class EmailsComponent {
     <div class="content">
       <p>To: {{ dialogData.to }}</p>
       <div style="flex-grow: 1;">
-        <iframe [srcdoc]="body"></iframe>
+        <iframe [srcdoc]="body" sandbox=""></iframe>
       </div>
     </div>
     <mat-dialog-actions>

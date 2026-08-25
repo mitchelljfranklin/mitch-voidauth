@@ -45,10 +45,13 @@ export const TTLs = {
   PASSKEY_AUTHN: 5 * MINUTE,
   TOTP_VERIFICATION: 10 * MINUTE,
 
+  // Retention window for the email_log table, which contains copies of sent emails
+  EMAIL_LOG: 30 * DAY,
+
   // OIDC TTLs
   INTERACTION: 1 * HOUR,
-  SESSION: 1 * YEAR,
-  GRANT: 1 * YEAR,
+  SESSION: 14 * DAY,
+  GRANT: 90 * DAY,
 
   // Should be longer than or equal to any OIDC TTLs
   OIDC_JWK: 1 * YEAR,

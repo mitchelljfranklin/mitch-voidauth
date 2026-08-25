@@ -21,6 +21,7 @@ VoidAuth is configurable primarily by environment variable. For sensitive values
 | APP_URL | | URL of the web interface. ex. `https://auth.example.com` or `https://example.com/auth` | 🔴 | |
 | STORAGE_KEY | | Storage encryption key for secret values such as keys and OIDC App Client Secrets. Must be at least 32 characters long and should be randomly generated. If you do not enter one VoidAuth will recommend one to you. | 🔴 | |
 | STORAGE_KEY_SECONDARY | | Secondary storage encryption key, used when rotating the primary storage encryption key. | | |
+| TRUST_PROXY | `true` | Whether to trust `X-Forwarded-*` headers for client IP detection (rate limiting and logging). Only set this to `false` if the app port is exposed directly without a reverse proxy. When left `true`, the app port must only be reachable through a proxy that sanitizes these headers — otherwise clients can spoof their IP to bypass rate limits. | | |
 | SESSION_DOMAIN | `${APP_URL}` Base Domain | Domain of the VoidAuth Session Cookie. This is automatically set to the Base Domain of `${APP_URL}` but may be overridden here. Must be equal to or a higher level domain than `${APP_URL}` | | |
 | DEFAULT_REDIRECT | `${APP_URL}` | The home/landing/app url for your domain. This is where users will be redirected upon accepting an invitation, logout, or clicking the header logo when already on the auth home page. | | ✅ |
 | SIGNUP | `false` | Whether the app allows new users to self-register themselves without invitation. | | |

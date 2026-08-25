@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { getUserById } from '../db/user'
 import appConfig from '../util/config'
 import { createEmailVerification } from './interaction'
+import { getEmailVerification } from '../db/emailVerification'
 import { getInvitation } from '../db/invitations'
 import { zodValidate } from '../util/zodValidate'
 import zod from 'zod'
@@ -24,6 +25,13 @@ authRouter.post('/send_verify_email',
 
     if (!user) {
       res.sendStatus(404)
+      return
+    }
+
+    // Do not send when the account is already verified, or an unexpired
+    // verification email was recently created; prevents mail-bombing via UUID reuse
+    if (user.emailVerified || await getEmailVerification(user.id)) {
+      res.send()
       return
     }
 

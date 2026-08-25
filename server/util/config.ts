@@ -17,6 +17,11 @@ class Config {
   APP_URL = ''
   APP_PORT: number | string = 3000
 
+  // Trust X-Forwarded-* headers for client IP detection (rate limiting, logging).
+  // Only safe when the app port is reachable exclusively through a reverse proxy
+  // that sanitizes these headers; clients can otherwise spoof their rate-limit identity.
+  TRUST_PROXY: boolean = true
+
   SESSION_DOMAIN?: string
 
   SIGNUP = false
@@ -94,6 +99,13 @@ class Config {
   LDAP_SYNC_SKIP_CERT_VERIFICATION: boolean = false
   /** When true, keep user data (set approved=false, expiresAt=now). When false, delete. */
   LDAP_SYNC_KEEP_DISABLED_USERS: boolean = false
+  /**
+   * When true, an LDAP entry whose username matches an existing local account
+   * (that has never been LDAP-synced) takes that account over for authentication.
+   * Disabled by default because anyone who controls directory entries could
+   * claim same-named local accounts.
+   */
+  LDAP_SYNC_LINK_EXISTING_USERS: boolean = false
   LDAP_SYNC_USER_UNIQUE_ID_ATTRIBUTE?: string
   LDAP_SYNC_USERNAME_ATTRIBUTE?: string
   LDAP_SYNC_USER_MAIL_ATTRIBUTE?: string
@@ -149,6 +161,8 @@ function assignConfigValue(key: keyof Config, value: string | undefined) {
     case 'LDAP_SYNC_ENABLED':
     case 'LDAP_SYNC_SKIP_CERT_VERIFICATION':
     case 'LDAP_SYNC_KEEP_DISABLED_USERS':
+    case 'LDAP_SYNC_LINK_EXISTING_USERS':
+    case 'TRUST_PROXY':
       appConfig[key] = booleanString(value) ?? appConfig[key]
       break
 

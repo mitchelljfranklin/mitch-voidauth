@@ -7,7 +7,7 @@ import appConfig from '../util/config'
 import { createEmailVerification } from './interaction'
 import { updatePasswordValidator } from '@shared/api-request/UpdatePassword'
 import type { User } from '@shared/db/User'
-import { checkPasswordHash } from '../db/user'
+import { checkPasswordHash, endSessions } from '../db/user'
 import { deleteUserPasskey, deleteUserPasskeys, getUserPasskeys, getUserPasskeysResponse } from '../db/passkey'
 import type { OIDCPayload } from '@shared/db/OIDCPayload'
 import { TABLES } from '@shared/db'
@@ -159,6 +159,7 @@ userRouter.patch('/password',
 
     if (passwordStrength(newPassword).score < appConfig.PASSWORD_STRENGTH) {
       res.status(422).send({ message: 'Password is not strong enough.' })
+      return
     }
 
     if (user.hasPassword && (!oldPassword || !await checkPasswordHash(user.id, oldPassword))) {
@@ -167,6 +168,7 @@ userRouter.patch('/password',
     }
 
     await db().table<User>(TABLES.USER).update({ passwordHash: argon2.hash(newPassword) }).where({ id: user.id })
+    await endSessions(user.id)
     res.send()
   })
 

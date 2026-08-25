@@ -24,6 +24,19 @@ import { syncLDAP } from '../ldap/sync'
 const PROCESS_ROOT = path.dirname(process.argv[1] ?? '.')
 const FE_ROOT = path.join(PROCESS_ROOT, '../frontend/dist/browser')
 
+function escapeHtmlText(v: string): string {
+  return v
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function escapeHtmlAttr(v: string): string {
+  return escapeHtmlText(v)
+    .replaceAll('"', '&quot;')
+    .replaceAll('\'', '&#39;')
+}
+
 export async function serve() {
   // Do not wait for theme to generate before starting
   void generateTheme()
@@ -33,9 +46,16 @@ export async function serve() {
 
   const app = express()
 
-  // MUST be hosted behind ssl terminating proxy
-  app.enable('trust proxy')
-  provider.proxy = true
+  // Trust X-Forwarded-* headers for client IP detection; TRUST_PROXY=false
+  // if the app port is ever exposed without a header-sanitizing reverse proxy
+  app.set('trust proxy', appConfig.TRUST_PROXY)
+  provider.proxy = appConfig.TRUST_PROXY
+  if (appConfig.TRUST_PROXY) {
+    logger({
+      level: 'info',
+      message: 'TRUST_PROXY is enabled; the app must only be reachable through a reverse proxy that sanitizes X-Forwarded-* headers.',
+    })
+  }
 
   app.use(helmet({
     crossOriginOpenerPolicy: false,
@@ -43,10 +63,10 @@ export async function serve() {
       // use safe defaults, and also...
       useDefaults: true,
       directives: {
-        'script-src': ['\'self\'', '\'unsafe-inline\''], // angular uses inline scripts for loading
+        'script-src': ['\'self\''], // no inline scripts; angular autoCsp handles bootstrap
         'img-src': ['\'self\'', 'data:', 'https:'], // needed to load client logoUri
         'font-src': ['\'self\'', 'data:'], // no external fonts
-        'style-src': ['\'self\'', '\'unsafe-inline\''], // no external styles
+        'style-src': ['\'self\'', '\'unsafe-inline\''], // angular injects critical styles
         'form-action': ['\'self\'', 'https:'], // must be able to form action to external site
       },
     },
@@ -275,10 +295,10 @@ export async function serve() {
 
   function modifyIndex() {
     // add APP_TITLE
-    let index = fs.readFileSync(path.join(FE_ROOT, './index.html')).toString().replace('<title>', '<title>' + appConfig.APP_TITLE)
+    let index = fs.readFileSync(path.join(FE_ROOT, './index.html')).toString().replace('<title>', `<title>${escapeHtmlText(appConfig.APP_TITLE)}`)
 
     // Replace base href with path of APP_URL
-    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${basePath()}/"/>`)
+    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${escapeHtmlAttr(basePath())}"/>`)
 
     const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
 
@@ -287,8 +307,8 @@ export async function serve() {
     if (hasDBLogo) {
       const logoUrl = appConfig.APP_LOGO as string
       const mimeType = logoUrl.startsWith('data:image/svg+xml') ? 'image/svg+xml' : 'image/png'
-      index = index.replaceAll(faviconRegex, `<link rel="icon" href="${logoUrl}" sizes="any" type="${mimeType}"/>`)
-      index = index.replace(/<meta[^>]*name="logoUri"[^>]*>/g, `<meta name="logoUri" content="${logoUrl}"/>`)
+      index = index.replaceAll(faviconRegex, `<link rel="icon" href="${escapeHtmlAttr(logoUrl)}" sizes="any" type="${mimeType}"/>`)
+      index = index.replace(/<meta[^>]*name="logoUri"[^>]*>/g, `<meta name="logoUri" content="${escapeHtmlAttr(logoUrl)}"/>`)
       return index
     }
 

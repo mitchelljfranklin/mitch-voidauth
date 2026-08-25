@@ -58,6 +58,10 @@ import { passwordStrength } from '../util/zxcvbn'
 import { checkPrivileged, checkPrivilegedForTotpCreate, checkPrivilegedForTotpValidate } from '../util/authMiddleware'
 import { TABLES } from '@shared/db'
 
+// Hash of an unusable password, verified against when the submitted username
+// does not exist so that response timing does not reveal valid usernames
+const DUMMY_PASSWORD_HASH = argon2.hash('voidauth-timing-equalization')
+
 export const router = Router()
 
 /**
@@ -740,6 +744,8 @@ router.post('/login',
 
     const user = await getUserByInput(input)
     if (!user) {
+      // equalize timing with the password-check path for existing users
+      await argon2.verify(DUMMY_PASSWORD_HASH, password)
       res.sendStatus(401)
       return
     }

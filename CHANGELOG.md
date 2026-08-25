@@ -12,6 +12,27 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 ### [Unreleased]
 
+#### Security
+
+Security hardening release based on a full audit. Highlights:
+
+- **Fixed**: missing `return` after password-strength rejection allowed weak passwords to be silently stored during self-service password change (`PATCH /api/user/password`) and unauthenticated reset (`POST /api/public/reset_password`)
+- **Hardened**: embedded LDAP server — per-source bind-failure backoff (5 consecutive failures → exponential block up to 15 min), max 64 concurrent connections, 5-minute idle timeout; argon2 verification moved off the event loop into a worker-thread pool so bind floods can no longer stall HTTP/OIDC
+- **Changed**: default OIDC session TTL reduced from 1 year to 14 days, grant TTL from 1 year to 90 days (existing sessions keep their original expiry until they lapse)
+- **Changed**: changing your password now signs out all other sessions for that account
+- **Changed**: email log bodies are stored with secret challenges redacted, and `email_log` rows are now purged after 30 days
+- **Changed**: successful password reset now invalidates *all* outstanding reset tokens for the account
+- **Changed**: `send_verify_email` no longer re-sends while an active verification exists or the account is already verified (prevents mail-bombing via user UUID)
+- **Added**: TOTP replay protection — an accepted code cannot be reused within its validity window
+- **Changed**: LDAP sync no longer links matching local accounts by default; new opt-in `LDAP_SYNC_LINK_EXISTING_USERS` flag (admin accounts are never linked). LDAP-synced users removed from the configured LDAP admin group lose the built-in admin group automatically
+- **Changed**: CSP `script-src` no longer allows `'unsafe-inline'`
+- **Added**: `TRUST_PROXY` setting (default `true`) controlling whether `X-Forwarded-*` headers are trusted for rate-limit identity
+- **Changed**: CORS for OIDC endpoints now restricted to origins of each client's registered redirect / post-logout URIs instead of any HTTPS origin
+- **Changed**: failed Basic-auth attempts on ProxyAuth endpoints (`/api/authz/*`) are now additionally rate limited
+- **Changed**: admin-set logo/title values are HTML-escaped when injected into the served index page
+- **Hardened**: admin email preview iframe is sandboxed
+- Login responses now take equal time for unknown usernames and wrong passwords
+
 #### Added
 - **Admin Settings page** — DB-backed runtime config (Admin → Settings)
   - General: APP_TITLE, DEFAULT_REDIRECT, CONTACT_EMAIL

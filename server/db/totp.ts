@@ -59,6 +59,7 @@ export async function createTOTP(userId: string, label: string): Promise<Registe
     userId,
     secret: encryptString(secret),
     expiresAt: createExpiration(TTLs.TOTP_VERIFICATION),
+    lastUsedTimestep: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
@@ -76,13 +77,23 @@ export async function validateTOTP(userId: string, token: string) {
   const totps = await getUserTOTPs(userId, true)
 
   for (const totp of totps) {
-    const delta = (new OTPAuth.TOTP({
+    const otp = new OTPAuth.TOTP({
       secret: totp.secret,
-    })).validate({ token, window: 1 })
+    })
+    const delta = otp.validate({ token, window: 1 })
     if (delta != null) {
-      if (totp.expiresAt != null) {
-        await db().table<TOTP>(TABLES.TOTP).update({ expiresAt: null, updatedAt: new Date() }).where({ id: totp.id })
+      // Reject codes that were already accepted; a valid code must never be
+      // replayable within or across its validity window
+      const timestep = Math.floor(Date.now() / 1000 / otp.period) + delta
+      if (totp.lastUsedTimestep != null && timestep <= totp.lastUsedTimestep) {
+        continue
       }
+
+      await db().table<TOTP>(TABLES.TOTP).update({
+        expiresAt: null,
+        lastUsedTimestep: timestep,
+        updatedAt: new Date(),
+      }).where({ id: totp.id })
       return true
     }
   }

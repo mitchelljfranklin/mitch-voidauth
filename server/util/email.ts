@@ -21,6 +21,18 @@ import { TABLES } from '@shared/db'
 export let SMTP_VERIFIED = false
 const DEFAULT_EMAIL_TEMPLATE_DIR = './default_email_templates'
 
+// Email bodies are persisted in the email_log table for auditing; strip the
+// secret challenges from verification/reset/invitation links so a database
+// compromise does not yield working takeover links.
+function redactChallenges(body: string | null | undefined): string | null {
+  if (!body) {
+    return body ?? null
+  }
+  return body
+    .replace(/([?&]challenge=)[^"'&\s<>]+/gi, '$1[REDACTED]')
+    .replace(/(\/verify_email\/[0-9a-fA-F-]{36}\/)[^"'\s<>]+/gi, '$1[REDACTED]')
+}
+
 const transportOptions: SMTPTransport.Options = {
   host: appConfig.SMTP_HOST,
   port: appConfig.SMTP_PORT,
@@ -214,7 +226,7 @@ export async function sendEmailVerification(user: UserWithoutPassword, challenge
     toUser: user.id,
     to: email,
     subject: subject,
-    body: html ?? text,
+    body: redactChallenges(html ?? text),
     reasons: user.id,
     createdAt: new Date(),
   }
@@ -261,7 +273,7 @@ export async function sendPasswordReset(passwordReset: PasswordReset, user: User
     toUser: user.id,
     to: email,
     subject: subject,
-    body: html ?? text,
+    body: redactChallenges(html ?? text),
     reasons: `${passwordReset.id},${passwordReset.userId}`,
     createdAt: new Date(),
   }
@@ -309,7 +321,7 @@ export async function sendInvitation(invitation: Invitation, email: string) {
     type: 'invitation',
     to: email,
     subject: subject,
-    body: html ?? text,
+    body: redactChallenges(html ?? text),
     reasons: invitation.id,
     createdAt: new Date(),
   }

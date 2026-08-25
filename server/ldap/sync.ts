@@ -14,7 +14,7 @@ import type { Entry } from 'ldapts'
 import appConfig from '../util/config'
 import { db } from '../db/db'
 import { TABLES } from '@shared/db'
-import { ADMIN_GROUP } from '@shared/constants'
+import { ADMIN_GROUP, ADMIN_USER } from '@shared/constants'
 import type { User } from '@shared/db/User'
 import type { Group, UserGroup } from '@shared/db/Group'
 import { logger } from '../util/logger'
@@ -171,6 +171,18 @@ export async function verifyLDAPPassword(userDN: string, password: string): Prom
       }
     }
   }
+}
+
+/**
+ * Check whether a user is a member of the built-in VoidAuth admin group.
+ */
+async function userIsAdmin(userId: string): Promise<boolean> {
+  const row = await db().table<UserGroup>(TABLES.USER_GROUP)
+    .join<Group>(TABLES.GROUP, `${TABLES.USER_GROUP}.groupId`, `${TABLES.GROUP}.id`)
+    .where(`${TABLES.USER_GROUP}.userId`, userId)
+    .andWhere(`${TABLES.GROUP}.name`, ADMIN_GROUP)
+    .first()
+  return !!row
 }
 
 /**
@@ -375,6 +387,17 @@ async function syncSingleUser(ldapUser: Entry): Promise<string | undefined> {
 
   if (existingByUsername) {
     if (!existingByUsername.ldapExternalId) {
+      // Taking over an existing local account is opt-in and never allowed for
+      // admin accounts; otherwise anyone controlling LDAP entries could claim
+      // same-named local accounts.
+      if (!appConfig.LDAP_SYNC_LINK_EXISTING_USERS || username.toLowerCase() === ADMIN_USER || await userIsAdmin(existingByUsername.id)) {
+        logger({
+          level: 'info',
+          message: `LDAP sync: refusing to link existing local account to LDAP entry (linking disabled or target is an admin): ${username}`,
+        })
+        return undefined
+      }
+
       await db().table<User>(TABLES.USER)
         .update({
           ldapSource: LDAP_SOURCE,
@@ -598,6 +621,8 @@ async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<voi
     return memberOf.some(dn => groupDNMatchesAdminGroup(dn, adminGroupName))
   })
 
+  const ldapSyncedAdminIds = new Set<string>()
+
   for (const ldapUser of adminLDAPUsers) {
     const user = await db().table<User>(TABLES.USER)
       .select('id')
@@ -619,5 +644,30 @@ async function assignAdminGroupToAdminLDAPUsers(ldapUsers: Entry[]): Promise<voi
       })
       .onConflict(['userId', 'groupId'])
       .merge(['updatedAt', 'updatedBy'])
+
+    ldapSyncedAdminIds.add(user.id)
+  }
+
+  // LDAP is the source of truth for admins synced from the directory; remove
+  // the built-in admin group from LDAP-synced users that are no longer members
+  // of the configured LDAP admin group.
+  const currentLdapSyncedAdmins = await db().table<User>(TABLES.USER)
+    .select<{ id: string }[]>(`${TABLES.USER}.id`)
+    .join<UserGroup>(TABLES.USER_GROUP, `${TABLES.USER_GROUP}.userId`, `${TABLES.USER}.id`)
+    .join<Group>(TABLES.GROUP, `${TABLES.GROUP}.id`, `${TABLES.USER_GROUP}.groupId`)
+    .where(`${TABLES.GROUP}.name`, ADMIN_GROUP)
+    .whereNotNull(`${TABLES.USER}.ldapSource`)
+
+  for (const admin of currentLdapSyncedAdmins) {
+    if (!ldapSyncedAdminIds.has(admin.id)) {
+      await db().table<UserGroup>(TABLES.USER_GROUP)
+        .delete()
+        .where({ userId: admin.id, groupId: adminGroup.id })
+
+      logger({
+        level: 'info',
+        message: `LDAP sync: removed admin group from user no longer in LDAP admin group: ${admin.id}`,
+      })
+    }
   }
 }

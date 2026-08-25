@@ -6,6 +6,7 @@ export type TOTP = Pick<Audit, 'createdAt' | 'updatedAt'> & {
   userId: string
   secret: string
   expiresAt: Date | number | null
+  lastUsedTimestep: number | null
 }
 
 const _typeCheck: DBColumnTypesCheck<TOTP> = true

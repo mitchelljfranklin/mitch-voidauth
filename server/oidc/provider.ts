@@ -455,13 +455,27 @@ const configuration: Configuration = {
     }
   },
   clientBasedCORS: (_ctx, origin, client) => {
+    // Only allow CORS for origins that belong to the client's registered
+    // redirect or post-logout URIs (wildcard patterns supported)
     const originUrl = URL.parse(origin)
-    if (originUrl?.protocol === 'https:') {
-      return true
+    if (!originUrl || !originUrl.host) {
+      return false
     }
 
-    if (client.redirectUris?.some(uri => URL.parse(uri)?.origin === origin)) {
-      return true
+    const uris = [...(client.redirectUris ?? []), ...(client.postLogoutRedirectUris ?? [])]
+    for (const uri of uris) {
+      if (!uri.includes('*')) {
+        const parsed = URL.parse(uri)
+        if (parsed?.origin === origin && parsed.origin !== 'null') {
+          return true
+        }
+        continue
+      }
+
+      const parsed = URL.parse(uri)
+      if (parsed?.protocol === originUrl.protocol && isMatch(originUrl.host, parsed.host)) {
+        return true
+      }
     }
 
     return false

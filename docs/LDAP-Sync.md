@@ -80,6 +80,14 @@ deleted in the directory):
 |---|---|---|---|
 | `LDAP_SYNC_KEEP_DISABLED_USERS` | `false` | `true` = keep user data but disable the account; `false` = delete the user. | `true` |
 
+### Existing Account Linking
+
+| Variable | Default | Description | Example |
+|---|---|---|---|
+| `LDAP_SYNC_LINK_EXISTING_USERS` | `false` | When an LDAP entry's username matches an existing local account that has never been LDAP-synced, take that account over for authentication (its password becomes the LDAP bind). Leave `false` unless you fully trust everyone who can create directory entries — anyone who can add an LDAP entry with a matching username could otherwise claim a same-named local account. Accounts in the built-in admin group are never linked. | `true` |
+
+> Admin group membership synced from LDAP is also removed again automatically when a user leaves the configured `LDAP_SYNC_ADMIN_GROUP_NAME` group. Manually assigned admins that are not LDAP-synced are never touched.
+
 ### Search Filters
 
 | Variable | Default | Description | Example |

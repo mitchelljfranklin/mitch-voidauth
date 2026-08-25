@@ -95,6 +95,7 @@ publicRouter.post('/reset_password',
 
     if (passwordStrength(newPassword).score < appConfig.PASSWORD_STRENGTH) {
       res.status(422).send({ message: 'Password is not strong enough.' })
+      return
     }
 
     const user = await getUserById(userId)
@@ -107,7 +108,7 @@ publicRouter.post('/reset_password',
     }
 
     await db().table<User>(TABLES.USER).update({ passwordHash: argon2.hash(newPassword) }).where({ id: user.id })
-    await db().table<PasswordReset>(TABLES.PASSWORD_RESET).delete().where({ id: passwordReset.id })
+    await db().table<PasswordReset>(TABLES.PASSWORD_RESET).delete().where({ userId: user.id })
     await endSessions(user.id)
     res.send({ username: user.username } satisfies PasswordResetResponse)
   })

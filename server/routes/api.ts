@@ -15,6 +15,7 @@ import { transaction } from '../db/db'
 import { zodValidate } from '../util/zodValidate'
 import zod from 'zod'
 import { getProxyAuthWithCache } from '../db/proxyAuth'
+import { rateLimit } from 'express-rate-limit'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -26,6 +27,15 @@ declare global {
 }
 
 export const router = Router()
+
+// Limits failed Basic-auth attempts on the proxy auth endpoints; successful
+// requests are not counted so high-volume legitimate proxy traffic is unaffected
+const basicAuthRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: appConfig.API_RATELIMIT,
+  skipSuccessfulRequests: true,
+  legacyHeaders: false,
+})
 
 router.use(async (req, _res, next) => {
   // If method is post-put-patch-delete then use transaction
@@ -50,7 +60,7 @@ router.use(async (req: Request, res: Response, next) => {
 })
 
 // proxy cookie auth endpoints
-router.get('/authz/forward-auth', async (req: Request, res) => {
+router.get('/authz/forward-auth', basicAuthRateLimit, async (req: Request, res) => {
   const proto = req.get('x-forwarded-proto')
   const host = req.get('x-forwarded-host')
   const path = req.get('x-forwarded-uri')
@@ -69,7 +79,7 @@ router.get('/authz/forward-auth', async (req: Request, res) => {
   await proxyAuth(url, 'forward-auth', req, res)
 })
 
-router.get('/authz/auth-request', async (req: Request, res) => {
+router.get('/authz/auth-request', basicAuthRateLimit, async (req: Request, res) => {
   const headerUrl = req.get('x-original-url')
   const url = headerUrl ? URL.parse(headerUrl) : null
   if (!url) {
