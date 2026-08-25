@@ -37,6 +37,36 @@ function escapeHtmlAttr(v: string): string {
     .replaceAll('\'', '&#39;')
 }
 
+// Angular's autoCsp build feature emits a Content-Security-Policy meta tag in
+// index.html whose script-src ('strict-dynamic' + per-build hashes) authorizes
+// the inline bootstrap scripts it injects. Extract those sources so the
+// response header can carry the identical policy: header and meta CSPs are
+// enforced together (intersection), so the two must agree, and carrying the
+// policy in the header keeps scripts protected even if the served HTML is a
+// cached copy from before the meta tag existed.
+function extractAngularScriptSrc(indexHtml: string): string[] | null {
+  const metaTag = indexHtml.match(/<meta\b[^>]*>/gi)?.find(t => /http-equiv=["']Content-Security-Policy["']/i.test(t))
+  if (!metaTag) {
+    return null
+  }
+
+  // bound the content value by its opening quote via backreference; CSP source
+  // values themselves contain single quotes ('strict-dynamic', hashes)
+  const contentMatch = metaTag.match(/content\s*=\s*(["'])([\s\S]*?)\1/i)
+  if (!contentMatch?.[2]) {
+    return null
+  }
+
+  for (const directive of contentMatch[2].split(';')) {
+    const [name, ...values] = directive.trim().split(/\s+/)
+    if (name?.toLowerCase() === 'script-src' && values.length) {
+      return values
+    }
+  }
+
+  return null
+}
+
 export async function serve() {
   // Do not wait for theme to generate before starting
   void generateTheme()
@@ -57,18 +87,17 @@ export async function serve() {
     })
   }
 
+  const angularScriptSrc = extractAngularScriptSrc(fs.readFileSync(path.join(FE_ROOT, './index.html'), 'utf8'))
+
   app.use(helmet({
     crossOriginOpenerPolicy: false,
     contentSecurityPolicy: {
       // use safe defaults, and also...
       useDefaults: true,
       directives: {
-        // Angular's autoCsp emits its own script-src as a meta tag in index.html
-        // ('strict-dynamic' + build hashes) covering its inline bootstrap scripts.
-        // Header and meta policies are enforced together (intersection), so a
-        // header-level script-src would veto the meta policy and break the app;
-        // leave scripts to Angular's stricter meta policy instead.
-        'script-src': null,
+        // Mirror Angular's autoCsp script-src (strict-dynamic + build hashes);
+        // do not add or tighten it beyond what Angular's own meta allows
+        'script-src': angularScriptSrc,
         'img-src': ['\'self\'', 'data:', 'https:'], // needed to load client logoUri
         'font-src': ['\'self\'', 'data:'], // no external fonts
         'style-src': ['\'self\'', '\'unsafe-inline\''], // angular injects critical styles
