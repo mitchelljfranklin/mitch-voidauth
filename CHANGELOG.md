@@ -25,7 +25,7 @@ Security hardening release based on a full audit. Highlights:
 - **Changed**: `send_verify_email` no longer re-sends while an active verification exists or the account is already verified (prevents mail-bombing via user UUID)
 - **Added**: TOTP replay protection — an accepted code cannot be reused within its validity window
 - **Changed**: LDAP sync no longer links matching local accounts by default; new opt-in `LDAP_SYNC_LINK_EXISTING_USERS` flag (admin accounts are never linked). LDAP-synced users removed from the configured LDAP admin group lose the built-in admin group automatically
-- **Changed**: CSP `script-src` no longer allows `'unsafe-inline'`
+- **Fixed**: CSP `script-src` no longer set at the header level, where it vetoed Angular's own stricter `strict-dynamic` script policy (emitted as a meta tag with build hashes) and broke page loads; scripts are now governed solely by Angular's autoCsp meta policy
 - **Added**: `TRUST_PROXY` setting (default `true`) controlling whether `X-Forwarded-*` headers are trusted for rate-limit identity
 - **Changed**: CORS for OIDC endpoints now restricted to origins of each client's registered redirect / post-logout URIs instead of any HTTPS origin
 - **Changed**: failed Basic-auth attempts on ProxyAuth endpoints (`/api/authz/*`) are now additionally rate limited

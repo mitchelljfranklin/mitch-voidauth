@@ -63,7 +63,12 @@ export async function serve() {
       // use safe defaults, and also...
       useDefaults: true,
       directives: {
-        'script-src': ['\'self\''], // no inline scripts; angular autoCsp handles bootstrap
+        // Angular's autoCsp emits its own script-src as a meta tag in index.html
+        // ('strict-dynamic' + build hashes) covering its inline bootstrap scripts.
+        // Header and meta policies are enforced together (intersection), so a
+        // header-level script-src would veto the meta policy and break the app;
+        // leave scripts to Angular's stricter meta policy instead.
+        'script-src': null,
         'img-src': ['\'self\'', 'data:', 'https:'], // needed to load client logoUri
         'font-src': ['\'self\'', 'data:'], // no external fonts
         'style-src': ['\'self\'', '\'unsafe-inline\''], // angular injects critical styles
