@@ -31,6 +31,9 @@ Security hardening release based on a full audit. Highlights:
 - **Changed**: failed Basic-auth attempts on ProxyAuth endpoints (`/api/authz/*`) are now additionally rate limited
 - **Changed**: admin-set logo/title values are HTML-escaped when injected into the served index page
 - **Hardened**: admin email preview iframe is sandboxed
+- **Fixed**: served `index.html` had an empty `<base href>` on root-path deployments, so deep links (e.g. `/logout/<secret>`) resolved JS/CSS assets under the route path and rendered a white page with MIME-type console errors; the base now always ends with `/`
+- **Fixed**: TOTP enrollment confirmation consumed the current timestep, so logging in immediately afterwards with the still-displayed code was rejected as a replay until the 30 s window rolled over; enrollment no longer burns a timestep and replay protection still applies to real logins
+- **Changed**: unresolved asset-like paths (`.js`, `.css`, fonts, images) now return 404 instead of falling through to the SPA index page
 - Login responses now take equal time for unknown usernames and wrong passwords
 
 #### Added

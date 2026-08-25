@@ -82,16 +82,19 @@ export async function validateTOTP(userId: string, token: string) {
     })
     const delta = otp.validate({ token, window: 1 })
     if (delta != null) {
-      // Reject codes that were already accepted; a valid code must never be
-      // replayable within or across its validity window
+      // Reject codes that were already accepted for login; a valid code must
+      // never be replayable within or across its validity window
       const timestep = Math.floor(Date.now() / 1000 / otp.period) + delta
       if (totp.lastUsedTimestep != null && timestep <= totp.lastUsedTimestep) {
         continue
       }
 
+      // Promoting a pending (enrollment) TOTP is not a login; do not consume
+      // the current timestep, otherwise an immediate login with the still
+      // displayed code would be rejected as a replay
       await db().table<TOTP>(TABLES.TOTP).update({
         expiresAt: null,
-        lastUsedTimestep: timestep,
+        lastUsedTimestep: totp.expiresAt != null ? null : timestep,
         updatedAt: new Date(),
       }).where({ id: totp.id })
       return true

@@ -287,6 +287,12 @@ export async function serve() {
     if (req.method !== 'GET') {
       next()
       return
+    } else if (/\.[a-z0-9]+$/i.test(new URL(req.originalUrl, 'http://localhost').pathname)) {
+      // Missing asset-like paths (js, css, fonts, etc.) must not fall through to
+      // the SPA index; returning HTML here causes confusing MIME-type failures
+      res.status(404).send({
+        message: 'File not found.',
+      })
     } else if (req.originalUrl.startsWith(basePath() + '/') || req.originalUrl === basePath()) {
       // req.originalUrl starts with basePath + / or is exactly basePath
       const index = modifyIndex()
@@ -331,8 +337,11 @@ export async function serve() {
     // add APP_TITLE
     let index = fs.readFileSync(path.join(FE_ROOT, './index.html')).toString().replace('<title>', `<title>${escapeHtmlText(appConfig.APP_TITLE)}`)
 
-    // Replace base href with path of APP_URL
-    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${escapeHtmlAttr(basePath())}"/>`)
+    // Replace base href with path of APP_URL; must end with '/' so relative
+    // asset URLs resolve against the app directory on deep-link routes
+    // (an empty href makes deep links like /logout/<secret> resolve assets
+    // under that path, breaking the page)
+    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${escapeHtmlAttr(basePath())}/">`)
 
     const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
 
