@@ -16,6 +16,8 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 Security hardening release based on a full audit. Highlights:
 
+- **Dependencies**: applied all available security fixes via lockfile-only updates (`npm audit fix`) — resolves 7 advisories in backend tooling/runtime chains (incl. `fast-uri`, `ip-address` used by express-rate-limit) and 10 in frontend (incl. DOMPurify XSS hardening for the admin email preview); zero `package.json` version changes
+
 - **Fixed**: missing `return` after password-strength rejection allowed weak passwords to be silently stored during self-service password change (`PATCH /api/user/password`) and unauthenticated reset (`POST /api/public/reset_password`)
 - **Hardened**: embedded LDAP server — per-source bind-failure backoff (5 consecutive failures → exponential block up to 15 min), max 64 concurrent connections, 5-minute idle timeout; argon2 verification moved off the event loop into a worker-thread pool so bind floods can no longer stall HTTP/OIDC
 - **Changed**: default OIDC session TTL reduced from 1 year to 14 days, grant TTL from 1 year to 90 days (existing sessions keep their original expiry until they lapse)
