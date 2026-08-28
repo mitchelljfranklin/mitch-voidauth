@@ -1,0 +1,53 @@
+name: Upstream Drift
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/voidauth/voidauth.git
+          git fetch upstream main --no-tags
+
+      - name: Count new upstream commits
+        id: drift
+        run: |
+          COUNT=$(git rev-list --count origin/main..upstream/main)
+          echo "count=${COUNT}" >> ${GITHUB_ENV}
+          git log --oneline origin/main..upstream/main | head -30 > commits.txt || true
+
+      - name: Open or refresh drift issue
+        if: env.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Upstream drift: ${COUNT} new commit(s) on voidauth/main"
+          OLD=$(gh issue list --state open --search "Upstream drift in:title" --json number --jq '.[0].number' || true)
+          if [ -n "${OLD}" ]; then
+            gh issue close "${OLD}" --comment "Superseded; count changed."
+          fi
+          {
+            echo "Upstream \`voidauth/main\` is **${COUNT} commit(s) ahead** of our mirror (\`origin/main\`)."
+            echo ""
+            echo "## New commits"
+            echo '```'
+            cat commits.txt
+            echo '```'
+            echo ""
+            echo "Run the merge playbook in \`FORK.md\` when ready — smaller, more frequent syncs keep merges easy."
+          } > body.md
+          gh issue create --title "${TITLE}" --body-file body.md --label "upstream-sync" || gh issue create --title "${TITLE}" --body-file body.md

@@ -49,11 +49,22 @@ npm start                         # backend + frontend watch, localhost:3000
 Migrations run automatically at startup (`db.migrate.latest()` in `server/db/connection.ts`). Create new ones with `npx knex migrate:make <name>` → timestamped `.ts` file in `migrations/`.
 
 ```bash
-npm run lint          # eslint (root tsconfig covers server/, shared/, migrations/)
+npm run lint          # eslint (root tsconfig covers server/, shared/, migrations/, test/)
 npx tsc               # typecheck
 npm run server:build  # madge circular check (any cycle aborts), then esbuild → dist/index.mjs
 cd frontend && npm run build   # Angular production build
 ```
+
+Fork tooling:
+
+- `npm run fork:check` — asserts every intentional fork divergence (see `FORK.md`) is still present; run after every upstream merge.
+- `npm run i18n:normalize [--check]` — canonicalizes `en-US.json` formatting to prevent merge conflicts.
+- `npm run test:totp` / `npm run test:ldap-sync` — integration harnesses in `test/` (need the throwaway Postgres from `test/README.md`).
+- `scripts/smoke.ps1 -Image <tag>` — runtime smoke test of a built image.
+
+## Upstream merges
+
+Follow the playbook in `FORK.md`: it lists every intentional fork divergence (hardening fixes H1-H16, fork features F1-F3), the known re-apply hotspots, and the post-merge verification steps. Required per clone: `git config merge.ours.driver true`.
 
 ### Verification reality check
 

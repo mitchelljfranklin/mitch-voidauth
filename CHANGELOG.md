@@ -17,6 +17,15 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 - Merged 52 upstream commits: **Custom Claims** feature (users/groups/invitations, new admin page, `custom_claims` migration), **`TRUSTED_PROXIES`** environment variable (per-proxy/CIDR trust replacing the fork's `TRUST_PROXY` boolean — remove `TRUST_PROXY` from your environment when upgrading; the default `loopback, linklocal, uniquelocal` covers typical reverse-proxy setups), supply-chain hardening (GitHub Actions pinned to SHAs, base image digest-pinned, dependabot), prototype-pollution fix, COOP disabled for popup OIDC flows, and ru-RU locale
 - Angular dependency pins aligned with upstream's Angular 22 line
 
+#### Developer tooling
+
+- `FORK.md` — authoritative fork-divergence manifest (H1-H16 hardening fixes, F1-F3 fork features) and upstream merge playbook
+- `npm run fork:check` — post-merge semantic sweep asserting all divergences are still present (also catches `Dockerfile.fork` drift from upstream `Dockerfile` changes)
+- `npm run i18n:normalize [--check]` — canonicalizes `en-US.json` formatting to keep i18n merges content-only
+- `npm run test:totp` / `npm run test:ldap-sync` — integration harnesses in `test/` (real DB; they previously caught the weak-password and `user_group.id` bugs)
+- `scripts/smoke.ps1` — runtime smoke test of a built image (base href, CSP mirroring, gated routes, migrations)
+- `.github/workflows/upstream-drift.yml` — weekly check that opens an issue when upstream `main` gains commits, to keep syncs small and frequent
+
 #### Security
 
 Security hardening release based on a full audit. Highlights:
