@@ -1,8 +1,8 @@
-# Configuration
+﻿# Configuration
 
 ## Admin Settings
 
-Some settings can be managed from the **Admin → Settings** page in the web interface. Settings configured there override environment variable values where both exist. Changes take effect immediately after saving.
+Some settings can be managed from the **Admin â†’ Settings** page in the web interface. Settings configured there override environment variable values where both exist. Changes take effect immediately after saving.
 
 ## Users and Apps
 
@@ -20,27 +20,26 @@ The available environment variables and their defaults are listed below:
 
 | Name | Default | Description | Required | Recommended |
 | :------ | :-- | :-------- | :--- | :--- |
-| APP_URL | | URL of the web interface. ex. `https://auth.example.com` or `https://example.com/auth` | 🔴 | |
-| TRUSTED_PROXIES | `loopback, linklocal, uniquelocal` | Sets trusted sources of sensitive HTTP headers. See documentation for how to securely set up a reverse proxy on the [Proxies and ProxyAuth](ProxyAuth-and-Trusted-Header-SSO-Setup.md#proxy-setup) page. Accepts lists of IP addresses or CIDRs, special values `loopback` `linklocal` `uniquelocal`, `true` to trust all sources, or `false` to trust none. | | ✅ |
-| STORAGE_KEY | | Storage encryption key for secret values such as keys and OIDC App Client Secrets. Must be at least 32 characters long and should be randomly generated. If you do not enter one VoidAuth will recommend one to you. | 🔴 | |
+| APP_URL | | URL of the web interface. ex. `https://auth.example.com` or `https://example.com/auth` | ðŸ”´ | |
+| TRUSTED_PROXIES | `loopback, linklocal, uniquelocal` | Sets trusted sources of sensitive HTTP headers. See documentation for how to securely set up a reverse proxy on the [Proxies and ProxyAuth](ProxyAuth-and-Trusted-Header-SSO-Setup.md#proxy-setup) page. Accepts lists of IP addresses or CIDRs, special values `loopback` `linklocal` `uniquelocal`, `true` to trust all sources, or `false` to trust none. | | âœ… |
+| STORAGE_KEY | | Storage encryption key for secret values such as keys and OIDC App Client Secrets. Must be at least 32 characters long and should be randomly generated. If you do not enter one VoidAuth will recommend one to you. | ðŸ”´ | |
 | STORAGE_KEY_SECONDARY | | Secondary storage encryption key, used when rotating the primary storage encryption key. | | |
-| TRUST_PROXY | `true` | Whether to trust `X-Forwarded-*` headers for client IP detection (rate limiting and logging). Only set this to `false` if the app port is exposed directly without a reverse proxy. When left `true`, the app port must only be reachable through a proxy that sanitizes these headers — otherwise clients can spoof their IP to bypass rate limits. | | |
 | SESSION_DOMAIN | `${APP_URL}` Base Domain | Domain of the VoidAuth Session Cookie. This is automatically set to the Base Domain of `${APP_URL}` but may be overridden here. Must be equal to or a higher level domain than `${APP_URL}` | | |
-| DEFAULT_REDIRECT | `${APP_URL}` | The home/landing/app url for your domain. This is where users will be redirected upon accepting an invitation, logout, or clicking the header logo when already on the auth home page. | | ✅ |
+| DEFAULT_REDIRECT | `${APP_URL}` | The home/landing/app url for your domain. This is where users will be redirected upon accepting an invitation, logout, or clicking the header logo when already on the auth home page. | | âœ… |
 | SIGNUP | `false` | Whether the app allows new users to self-register themselves without invitation. | | |
-| SIGNUP_REQUIRES_APPROVAL | `true` | Whether new users who register themselves require approval by an admin. Setting this to `false` while `SIGNUP` is `true` enables open self-registration; use with caution! ⚠️ | | |
+| SIGNUP_REQUIRES_APPROVAL | `true` | Whether new users who register themselves require approval by an admin. Setting this to `false` while `SIGNUP` is `true` enables open self-registration; use with caution! âš ï¸ | | |
 | EMAIL_VERIFICATION | `true` if SMTP_HOST is set, otherwise `false` | If true, users must have an email address and will get a verification email when changing their email address before it can be used. If you are using an email provider, this should probably be `true`. | | |
 | MFA_REQUIRED | `false` | If true, users must use a second security factor while logging in such as an Authenticator Token or Passkey | | |
 | API_RATELIMIT  | `60` | Rate Limit for mutating (state-changing) requests per minute per IP address. Default is `60`, one per second. | | |
-| ENABLE_DEBUG  | `false` | Enables debug logging. ⚠️WARNING!⚠️ This will cause the activity of users to be printed in the logs.  | | |
+| ENABLE_DEBUG  | `false` | Enables debug logging. âš ï¸WARNING!âš ï¸ This will cause the activity of users to be printed in the logs.  | | |
 
 ### App Customization
 
 | Name | Default | Description | Required | Recommended |
 | :------ | :-- | :-------- | :--- | :--- |
-| APP_TITLE | `VoidAuth` | Title that will show on the web interface, use your own brand/app/title. | | ✅ |
+| APP_TITLE | `VoidAuth` | Title that will show on the web interface, use your own brand/app/title. | | âœ… |
 | APP_PORT | `3000` | The port that app will listen on. Can also be set to a unix-socket, ex. `/tmp/sock` | | |
-| APP_COLOR | `#906bc7` | Theme color, rgb format; ex. #xxyyzz | | ✅ |
+| APP_COLOR | `#906bc7` | Theme color, rgb format; ex. #xxyyzz | | âœ… |
 | APP_FONT | `monospace` | Font used in the web interface and sent emails. Safe fonts should be used, if a font is missing it will fallback to default. Multiple font families may be chosen in fallback-font format. ex. `APP_FONT: "Tahoma, Verdana, sans-serif"` | | |
 | CONTACT_EMAIL | | The email address used for 'Contact' links, which are shown on most end-user pages if this is set. | | |
 
@@ -51,8 +50,8 @@ When using the `sqlite` database adapter type, no additional database connection
 | Name | Default | Description | Required | Recommended |
 | :------ | :-- | :-------- | :--- | :--- |
 | DB_ADAPTER | `postgres` | Allowed values are `postgres` and `sqlite`. | | |
-| DB_HOST | | Host address of the database. May also be a postgres Unix Domain Socket, see node-postgres Unix Domain Socket documentation [here](https://node-postgres.com/features/connecting#unix-domain-sockets). | 🔴 (unless using SQLite database) | |
-| DB_PASSWORD | | Password of the database. Not used if using SQLite database. | | ✅ |
+| DB_HOST | | Host address of the database. May also be a postgres Unix Domain Socket, see node-postgres Unix Domain Socket documentation [here](https://node-postgres.com/features/connecting#unix-domain-sockets). | ðŸ”´ (unless using SQLite database) | |
+| DB_PASSWORD | | Password of the database. Not used if using SQLite database. | | âœ… |
 | DB_PORT | `5432` | Port of the database. Not used if using SQLite database. | | |
 | DB_USER | `postgres` | Username used to sign into the database by the app. Not used if using SQLite database. | | |
 | DB_NAME | `postgres` | Database name used to connect to the database by the app. Not used if using SQLite database. | | |
@@ -67,7 +66,7 @@ Use the following environment variables to configure a database migration. These
 | :------ | :-- | :-------- | :--- | :--- |
 | MIGRATE_TO_DB_ADAPTER | `postgres` | Allowed values are `postgres` and `sqlite`. | | |
 | MIGRATE_TO_DB_HOST | | Host address of the database. | | |
-| MIGRATE_TO_DB_PASSWORD | | Password of the database. Not used if migrating to SQLite database. | | ✅ |
+| MIGRATE_TO_DB_PASSWORD | | Password of the database. Not used if migrating to SQLite database. | | âœ… |
 | MIGRATE_TO_DB_PORT | `5432` | Port of the database. Not used if migrating to SQLite database. | | |
 | MIGRATE_TO_DB_USER | `postgres` | Username used to sign into the database by the app. Not used if migrating to SQLite database. | | |
 | MIGRATE_TO_DB_NAME | `postgres` | Database name used to connect to the database by the app. Not used if migrating to SQLite database. | | |
@@ -76,7 +75,7 @@ Use the following environment variables to configure a database migration. These
 
 ### SMTP Settings
 
-All of these settings are ✅ recommended to be set to the correct values for your email provider.
+All of these settings are âœ… recommended to be set to the correct values for your email provider.
 
 | Name | Default | Description |
 | :------ | :-- | :-------- |
@@ -104,7 +103,7 @@ LDAP is disabled by default. See the [LDAP Server](LDAP-Server.md) guide for set
 | LDAP_PORT | `3890` | Port the LDAP server listens on. | | |
 | LDAP_BASE_DN | `dc=voidauth` | Base distinguished name for LDAP directory entries. | | |
 | LDAP_BIND_DN | `cn=ldap_bind,dc=voidauth` | Service account DN LDAP clients can bind as before searching. | | |
-| LDAP_BIND_PASSWORD | | Password for the LDAP service account bind DN. | 🔴 if LDAP_ENABLED is set. | |
+| LDAP_BIND_PASSWORD | | Password for the LDAP service account bind DN. | ðŸ”´ if LDAP_ENABLED is set. | |
 | LDAP_TLS_CERT_FILE | | Path to a PEM certificate file. If set, `LDAP_TLS_KEY_FILE` must also be set and VoidAuth listens with LDAPS. | | |
 | LDAP_TLS_KEY_FILE | | Path to the PEM private key file for `LDAP_TLS_CERT_FILE`. | | |
 

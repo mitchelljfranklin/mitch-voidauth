@@ -6,11 +6,16 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 | Upstream base | Merged on |
 |---|---|
-| `157a1a1` | 2026-07-22 |
+| `b34e524` | 2026-08-26 |
 
 ## Fork changes
 
 ### [Unreleased]
+
+#### Upstream sync
+
+- Merged 52 upstream commits: **Custom Claims** feature (users/groups/invitations, new admin page, `custom_claims` migration), **`TRUSTED_PROXIES`** environment variable (per-proxy/CIDR trust replacing the fork's `TRUST_PROXY` boolean — remove `TRUST_PROXY` from your environment when upgrading; the default `loopback, linklocal, uniquelocal` covers typical reverse-proxy setups), supply-chain hardening (GitHub Actions pinned to SHAs, base image digest-pinned, dependabot), prototype-pollution fix, COOP disabled for popup OIDC flows, and ru-RU locale
+- Angular dependency pins aligned with upstream's Angular 22 line
 
 #### Security
 
