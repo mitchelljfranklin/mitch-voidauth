@@ -81,6 +81,7 @@ cd frontend && npm run build   # Angular production build
 - Upstream `Dockerfile` requires a `dhi.io` login — build locally with `Dockerfile.fork`.
 - Releases must be multi-arch `linux/amd64,linux/arm64` (ARM64/Portainer deployments).
 - `server/index.ts` is a yargs CLI (`serve` default, `migrate` for cross-DB moves, `generate password-reset|random`). It sets env vars *before* dynamically importing express/oidc-provider — don't convert those dynamic imports to static ones in that file.
+- `server/oidc/provider.ts` exports `provider` as a **factory function** — call `provider()`, never `provider.proxy`/`provider.Client` on the import itself. Client-secrets, sessions and TOTP secrets are AES-256-GCM encrypted at rest; `TRUSTED_PROXIES` (upstream) configures per-proxy trust for rate limiting.
 
 ## Frontend gotchas
 
