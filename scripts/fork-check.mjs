@@ -1,4 +1,5 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
+import seams from './fork-seams.mjs'
 
 const failures = []
 
@@ -10,12 +11,19 @@ function read(path) {
   return readFileSync(path, 'utf8')
 }
 
-// [file, pattern, description]
+// ---- seam checks: derived from scripts/fork-seams.mjs (single source of truth) ----
+for (const seam of seams) {
+  if (!existsSync(seam.file)) {
+    failures.push(`MISSING FILE: ${seam.file}`)
+    continue
+  }
+  if (!read(seam.file).includes(seam.applied)) {
+    failures.push(`SEAM MISSING: ${seam.id} (${seam.description}) in ${seam.file} — run: npm run seams:apply`)
+  }
+}
+
+// ---- owned-file / constant divergences (not seam-able) ----
 const checks = [
-  ['server/cli/server.ts', /base href="\$\{escapeHtmlAttr\(basePath\(\)\)\}\/">/, 'H13 base href always ends with /'],
-  ['server/cli/server.ts', /function extractAngularScriptSrc/, 'H13 CSP script-src extractor exists'],
-  ['server/cli/server.ts', /'script-src': angularScriptSrc/, 'H13 CSP header mirrors Angular policy'],
-  ['server/cli/server.ts', /\.\[a-z0-9\]\+\$\/i\.test/, 'H13 asset-like paths return 404'],
   ['server/util/argon2id.ts', /runInPool/, 'H1 argon2 verification worker pool'],
   ['server/ldap/server.ts', /BIND_FAILURES_BEFORE_BACKOFF/, 'H2 ldap bind-failure backoff'],
   ['server/ldap/server.ts', /MAX_CONNECTIONS/, 'H2 ldap connection cap'],
@@ -35,11 +43,6 @@ const checks = [
   ['server/db/totp.ts', /lastUsedTimestep/, 'H7 totp replay protection'],
   ['server/db/totp.ts', /totp\.expiresAt != null \? null : timestep/, 'H7 enrollment does not burn timestep'],
   ['server/db/tableMaintenance.ts', /TTLs\.EMAIL_LOG/, 'H8 email_log purge'],
-  ['server/util/email.ts', /function redactChallenges/, 'H9 email body challenge redaction'],
-  ['server/routes/api.ts', /skipSuccessfulRequests: true/, 'H10 failed-basic-auth limiter'],
-  ['server/oidc/provider.ts', /Only allow CORS for origins/, 'H11 tightened clientBasedCORS'],
-  ['server/oidc/provider.ts', /LOWER\("name"\) IN/, 'H11 case-insensitive client group matching'],
-  ['server/routes/interaction.ts', /DUMMY_PASSWORD_HASH/, 'H12 login timing equalization'],
   ['frontend/src/app/pages/admin/emails/emails.component.ts', /sandbox=""/, 'H14 email preview iframe sandbox'],
   ['frontend/src/app/services/auth.service.ts', /e\.status === 0/, 'H15 opaque redirect handled as success'],
   ['frontend/src/app/pages/mfa/mfa.component.ts', /replaceUrl: true/, 'H16 deterministic MFA cancel'],
@@ -116,4 +119,4 @@ if (failures.length) {
   console.error(`fork-check: ${failures.length} FAILURE(S)`)
   process.exit(1)
 }
-console.log(`fork-check: all ${checks.length} divergence checks pass ✓`)
+console.log(`fork-check: ${seams.length} seams + ${checks.length} owned-file divergences all present ✓`)

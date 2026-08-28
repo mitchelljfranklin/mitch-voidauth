@@ -25,6 +25,8 @@ import { PayloadTypes } from '@shared/db/OIDCPayload'
 import { TABLES } from '@shared/db'
 import { getAllClaims, getCustomClaims } from '../db/claims'
 import { getCurrentProviderConfig, setCurrentProviderConfig } from './configuration'
+// fork-seam: import cors
+import { corsForClient } from '../util/cors'
 
 // Extend 'oidc-provider' where needed
 declare module 'oidc-provider' {
@@ -427,32 +429,7 @@ async function getNextConfig() {
         }
       }
     },
-    clientBasedCORS: (_ctx, origin, client) => {
-      // Only allow CORS for origins that belong to the client's registered
-      // redirect or post-logout URIs (wildcard patterns supported)
-      const originUrl = URL.parse(origin)
-      if (!originUrl || !originUrl.host) {
-        return false
-      }
-
-      const uris = [...(client.redirectUris ?? []), ...(client.postLogoutRedirectUris ?? [])]
-      for (const uri of uris) {
-        if (!uri.includes('*')) {
-          const parsed = URL.parse(uri)
-          if (parsed?.origin === origin && parsed.origin !== 'null') {
-            return true
-          }
-          continue
-        }
-
-        const parsed = URL.parse(uri)
-        if (parsed?.protocol === originUrl.protocol && isMatch(originUrl.host, parsed.host)) {
-          return true
-        }
-      }
-
-      return false
-    },
+    clientBasedCORS: corsForClient,
     findAccount: findAccount,
     adapter: KnexAdapter,
   } satisfies Configuration

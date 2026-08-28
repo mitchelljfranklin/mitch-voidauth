@@ -16,7 +16,8 @@
     "fork:check": "node scripts/fork-check.mjs",
     "i18n:normalize": "node scripts/normalize-i18n.mjs",
     "test:totp": "tsx test/totp-harness.ts",
-    "test:ldap-sync": "tsx test/admin-sync-harness.ts"
+    "test:ldap-sync": "tsx test/admin-sync-harness.ts",
+    "seams:apply": "node scripts/apply-seams.mjs"
   },
   "author": "Derek Paschal",
   "license": "SEE LICENSE IN LICENSE FILE",

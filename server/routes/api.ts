@@ -15,7 +15,8 @@ import { transaction } from '../db/db'
 import { zodValidate } from '../util/zodValidate'
 import zod from 'zod'
 import { getProxyAuthWithCache } from '../db/proxyAuth'
-import { rateLimit } from 'express-rate-limit'
+// fork-seam: import basic-auth limiter
+import { basicAuthRateLimit } from '../util/rateLimit'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -27,15 +28,6 @@ declare global {
 }
 
 export const router = Router()
-
-// Limits failed Basic-auth attempts on the proxy auth endpoints; successful
-// requests are not counted so high-volume legitimate proxy traffic is unaffected
-const basicAuthRateLimit = rateLimit({
-  windowMs: 60 * 1000,
-  max: appConfig.API_RATELIMIT,
-  skipSuccessfulRequests: true,
-  legacyHeaders: false,
-})
 
 router.use(async (req, _res, next) => {
   // If method is post-put-patch-delete then use transaction

@@ -33,48 +33,9 @@ declare global {
 const PROCESS_ROOT = path.dirname(process.argv[1] ?? '.')
 const FE_ROOT = path.join(PROCESS_ROOT, '../frontend/dist/browser')
 
-function escapeHtmlText(v: string): string {
-  return v
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-}
-
-function escapeHtmlAttr(v: string): string {
-  return escapeHtmlText(v)
-    .replaceAll('"', '&quot;')
-    .replaceAll('\'', '&#39;')
-}
-
-// Angular's autoCsp build feature emits a Content-Security-Policy meta tag in
-// index.html whose script-src ('strict-dynamic' + per-build hashes) authorizes
-// the inline bootstrap scripts it injects. Extract those sources so the
-// response header can carry the identical policy: header and meta CSPs are
-// enforced together (intersection), so the two must agree, and carrying the
-// policy in the header keeps scripts protected even if the served HTML is a
-// cached copy from before the meta tag existed.
-function extractAngularScriptSrc(indexHtml: string): string[] | null {
-  const metaTag = indexHtml.match(/<meta\b[^>]*>/gi)?.find(t => /http-equiv=["']Content-Security-Policy["']/i.test(t))
-  if (!metaTag) {
-    return null
-  }
-
-  // bound the content value by its opening quote via backreference; CSP source
-  // values themselves contain single quotes ('strict-dynamic', hashes)
-  const contentMatch = metaTag.match(/content\s*=\s*(["'])([\s\S]*?)\1/i)
-  if (!contentMatch?.[2]) {
-    return null
-  }
-
-  for (const directive of contentMatch[2].split(';')) {
-    const [name, ...values] = directive.trim().split(/\s+/)
-    if (name?.toLowerCase() === 'script-src' && values.length) {
-      return values
-    }
-  }
-
-  return null
-}
+// fork seams (see FORK.md): logic lives in fork-owned server/cli/index-html.ts
+// fork-seam: import index-html
+import { assetNotFoundGuard, escapeHtmlAttr, escapeHtmlText, extractAngularScriptSrc } from './index-html.ts'
 
 export async function serve() {
   // Do not wait for theme to generate before starting
@@ -310,17 +271,14 @@ export async function serve() {
     }),
   )
 
+  // fork-seam: asset-like unresolved paths 404 instead of returning SPA index
+  app.use(assetNotFoundGuard())
+
   // Unresolved GET requests should return index if they start with basePath
   app.use((req, res, next) => {
     if (req.method !== 'GET') {
       next()
       return
-    } else if (/\.[a-z0-9]+$/i.test(new URL(req.originalUrl, 'http://localhost').pathname)) {
-      // Missing asset-like paths (js, css, fonts, etc.) must not fall through to
-      // the SPA index; returning HTML here causes confusing MIME-type failures
-      res.status(404).send({
-        message: 'File not found.',
-      })
     } else if (req.originalUrl.startsWith(basePath() + '/') || req.originalUrl === basePath()) {
       // req.originalUrl starts with basePath + / or is exactly basePath
       const index = modifyIndex()
@@ -365,11 +323,8 @@ export async function serve() {
     // add APP_TITLE
     let index = fs.readFileSync(path.join(FE_ROOT, './index.html')).toString().replace('<title>', `<title>${escapeHtmlText(appConfig.APP_TITLE)}`)
 
-    // Replace base href with path of APP_URL; must end with '/' so relative
-    // asset URLs resolve against the app directory on deep-link routes
-    // (an empty href makes deep links like /logout/<secret> resolve assets
-    // under that path, breaking the page)
-    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${escapeHtmlAttr(basePath())}/">`)
+    // Replace base href with path of APP_URL
+    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${basePath()}"/>`)
 
     const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
 

@@ -17,6 +17,8 @@ import ejs from 'ejs'
 import { logger } from './logger'
 import { getPasswordResetURL } from '../db/passwordReset'
 import { TABLES } from '@shared/db'
+// fork-seam: import redact
+import { redactChallenges } from './redact'
 
 export let SMTP_VERIFIED = false
 const DEFAULT_EMAIL_TEMPLATE_DIR = './default_email_templates'
@@ -24,14 +26,7 @@ const DEFAULT_EMAIL_TEMPLATE_DIR = './default_email_templates'
 // Email bodies are persisted in the email_log table for auditing; strip the
 // secret challenges from verification/reset/invitation links so a database
 // compromise does not yield working takeover links.
-function redactChallenges(body: string | null | undefined): string | null {
-  if (!body) {
-    return body ?? null
-  }
-  return body
-    .replace(/([?&]challenge=)[^"'&\s<>]+/gi, '$1[REDACTED]')
-    .replace(/(\/verify_email\/[0-9a-fA-F-]{36}\/)[^"'\s<>]+/gi, '$1[REDACTED]')
-}
+// redactChallenges moved to fork-owned server/util/redact.ts (fork-seam)
 
 const transportOptions: SMTPTransport.Options = {
   host: appConfig.SMTP_HOST,
@@ -179,7 +174,7 @@ export async function sendTestNotification(email: string) {
     toUser: null,
     to: email,
     subject: subject,
-    body: html ?? text,
+    body: redactChallenges(html ?? text),
     reasons: null,
     createdAt: new Date(),
   }
@@ -368,7 +363,7 @@ export async function sendApproved(user: Pick<User, 'id' | 'username' | 'name'>,
     toUser: user.id,
     to: email,
     subject: subject,
-    body: html ?? text,
+    body: redactChallenges(html ?? text),
     reasons: user.id,
     createdAt: new Date(),
   }
@@ -479,7 +474,7 @@ export async function sendAdminNotifications() {
       to: email,
       toUser: admin.id,
       subject: subject,
-      body: html ?? text,
+      body: redactChallenges(html ?? text),
       reasons: approvalsNeeded.map(a => a.id).join(','),
       createdAt: new Date(),
     }

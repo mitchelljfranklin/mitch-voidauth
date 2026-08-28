@@ -19,3 +19,13 @@ export const sensitiveRateLimit = rateLimit({
   max: appConfig.API_RATELIMIT,
   legacyHeaders: true,
 })
+
+// Fork: limits failed Basic-auth attempts on the proxy auth endpoints;
+// successful requests are not counted so high-volume legitimate proxy
+// traffic is unaffected. api.ts keeps the route seams (see FORK.md).
+export const basicAuthRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: appConfig.API_RATELIMIT,
+  skipSuccessfulRequests: true,
+  legacyHeaders: false,
+})
