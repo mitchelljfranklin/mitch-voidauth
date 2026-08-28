@@ -324,7 +324,7 @@ export async function serve() {
     let index = fs.readFileSync(path.join(FE_ROOT, './index.html')).toString().replace('<title>', `<title>${escapeHtmlText(appConfig.APP_TITLE)}`)
 
     // Replace base href with path of APP_URL
-    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${basePath()}"/>`)
+    index = index.replace(/<base[^>]*href=[^>]*>/g, `<base href="${basePath()}/"/>`)
 
     const faviconRegex = /<link[^>]*rel="icon"[^>]*>/g
 

@@ -99,10 +99,10 @@ for (const seam of seams) {
   results.stale.push({ seam, reason: `unknown op: ${seam.op}` })
 }
 
-for (const { seam } of results.present) {
+for (const seam of results.present) {
   console.log(`present: ${seam.id} (${seam.description})`)
 }
-for (const { seam } of results.applied) {
+for (const seam of results.applied) {
   console.log(`applied: ${seam.id} (${seam.description})`)
 }
 for (const { seam, reason } of results.stale) {
