@@ -19,6 +19,8 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 #### Developer tooling
 
+- **Fork logic extracted into fork-owned modules** — `server/cli/index-html.ts` (escaping, CSP mirror, asset-404 guard), `server/util/cors.ts`, `server/util/login-timing.ts`, `server/util/redact.ts` — so upstream-hot files (`server.ts`, `provider.ts`, `interaction.ts`, `email.ts`, `api.ts`) carry only single-line seams
+- `scripts/fork-seams.mjs` + `npm run seams:apply` — after a merge, shared-file conflicts resolve with `git checkout --theirs` + one command that re-inserts all fork seams (idempotent; stale anchors fail loudly)
 - `FORK.md` — authoritative fork-divergence manifest (H1-H16 hardening fixes, F1-F3 fork features) and upstream merge playbook
 - `npm run fork:check` — post-merge semantic sweep asserting all divergences are still present (also catches `Dockerfile.fork` drift from upstream `Dockerfile` changes)
 - `npm run i18n:normalize [--check]` — canonicalizes `en-US.json` formatting to keep i18n merges content-only
