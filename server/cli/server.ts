@@ -3,13 +3,12 @@ import * as _types_valid from '../@types/type_validator'
 import express, { type NextFunction, type Request, type Response } from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
-import { initialJwks, provider, providerCookieKeys } from '../oidc/provider'
+import { isProviderClaimsDesynced, provider, resetProvider } from '../oidc/provider'
 import { generateTheme } from '../util/theme'
 import { getUserSessionInteraction, router } from '../routes/api'
 import helmet from 'helmet'
-import { getCookieKeys, getJWKs, makeKeysValid } from '../db/key'
+import { keysNeedUpdate, makeKeysValid } from '../db/key'
 import { randomInt } from 'node:crypto'
-import initialize from 'oidc-provider/lib/helpers/initialize_keystore.js'
 import { transaction, commit, rollback } from '../db/db'
 import { als } from '../util/als'
 import { sendAdminNotifications } from '../util/email'
@@ -20,6 +19,16 @@ import { sensitiveRateLimit, standardRateLimit } from '../util/rateLimit'
 import { FORBIDDEN_PATHS, NOT_FOUND_PATHS } from '@shared/constants'
 import { startLDAPServer } from '../ldap/server'
 import { syncLDAP } from '../ldap/sync'
+import * as proxyAddr from 'proxy-addr'
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      trusted: boolean | undefined // http headers trusted
+    }
+  }
+}
 
 const PROCESS_ROOT = path.dirname(process.argv[1] ?? '.')
 const FE_ROOT = path.join(PROCESS_ROOT, '../frontend/dist/browser')
@@ -76,16 +85,30 @@ export async function serve() {
 
   const app = express()
 
-  // Trust X-Forwarded-* headers for client IP detection; TRUST_PROXY=false
-  // if the app port is ever exposed without a header-sanitizing reverse proxy
-  app.set('trust proxy', appConfig.TRUST_PROXY)
-  provider.proxy = appConfig.TRUST_PROXY
-  if (appConfig.TRUST_PROXY) {
-    logger({
-      level: 'info',
-      message: 'TRUST_PROXY is enabled; the app must only be reachable through a reverse proxy that sanitizes X-Forwarded-* headers.',
-    })
+  function proxyTrust(ip?: string) {
+    if (ip == null) {
+      return true
+    }
+
+    const val = appConfig.TRUSTED_PROXIES
+    if (typeof val === 'boolean') {
+      const b = val
+      return b
+    }
+
+    const trust = proxyAddr.compile(val.split(',').map(v => v.trim())) as (addr: string) => boolean
+    const trusted = trust(ip)
+    return trusted
   }
+
+  app.set('trust proxy', proxyTrust)
+  provider().proxy = true
+  // determine whether the request remote address was trusted, using same function as 'trust proxy'
+  app.use((req, _res, next) => {
+    // headers were trusted, use same trust fn as 'trust proxy'
+    req.trusted = proxyTrust(req.socket.remoteAddress)
+    next()
+  })
 
   const angularScriptSrc = extractAngularScriptSrc(fs.readFileSync(path.join(FE_ROOT, './index.html'), 'utf8'))
 
@@ -158,6 +181,8 @@ export async function serve() {
           method: req.method,
           // show only original path without query to avoid logging sensitive info
           path: req.baseUrl + req.path,
+          // http headers were trusted
+          trusted: !!req.trusted,
         },
       })
       res.on('finish', async () => {
@@ -203,7 +228,9 @@ export async function serve() {
       // do nothing
     }
     next()
-  }, provider.callback())
+  }, async (req, res) => {
+    await (provider()).callback()(req, res)
+  })
 
   app.use(express.json({ limit: '1Mb' }))
 
@@ -219,8 +246,9 @@ export async function serve() {
     force: false,
   })
   // certain static assets should have Cross-Origin-Resource-Policy = cross-origin header
-  const brandImgRegex = new RegExp(`(logo|favicon|apple-touch-icon)\\.(svg|png|jpg|jpeg)`)
-  const brandImgPathRegex = new RegExp(`^${basePath()}/${brandImgRegex.source}$`)
+  const brandImgBaseRegex = new RegExp(`(logo|favicon|apple-touch-icon)\\.(svg|png|jpg|jpeg)`)
+  const brandImgRegex = new RegExp(`^${brandImgBaseRegex.source}$`)
+  const brandImgPathRegex = new RegExp(`^${basePath()}/${brandImgBaseRegex.source}$`)
   app.use(brandImgPathRegex, (_req, res, next) => {
     // Allow branding assets to be used cross-origin
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
@@ -391,7 +419,6 @@ export async function serve() {
   }
 
   // interval to delete expired db entries and keep keys up to date
-  let previousJwks = initialJwks
   async function doMaintenance(initialRun: boolean = false) {
     await als.run({}, async () => {
       await transaction()
@@ -401,9 +428,6 @@ export async function serve() {
 
         // Update encrypted table values to the current STORAGE_KEY
         await updateEncryptedTables(initialRun)
-
-        // make DB keys all valid
-        await makeKeysValid()
 
         // ensure that initial user is properly setup
         // Create initial admin user and group
@@ -428,26 +452,21 @@ export async function serve() {
           }
         }
 
-        // update provider cookie keys
-        const cookieKeys = (await getCookieKeys()).map(k => k.value)
-        if (!cookieKeys.length) {
-          throw new Error('No Cookie Signing Keys found.')
-        }
-        if (new Set(providerCookieKeys).symmetricDifference(new Set(cookieKeys)).size) {
-        // cookieKeys are not the same as providerCookieKeys
-          providerCookieKeys.length = 0 // magic, deletes all entries???
-          providerCookieKeys.unshift(...cookieKeys) // adds all db cookie keys
+        let providerNeedsReset = false
+
+        // if keys are near expiration, create new ones and reset provider to update keystore
+        if (await keysNeedUpdate()) {
+          await makeKeysValid()
+          providerNeedsReset = true
         }
 
-        // update provider jwks
-        const jwks = { keys: (await getJWKs()).map(k => k.jwk) }
-        if (!jwks.keys.length) {
-          throw new Error('No OIDC JWKs found.')
+        // Check if current custom claims match custom claims on the provider config
+        if (await isProviderClaimsDesynced()) {
+          providerNeedsReset = true
         }
-        if (new Set(previousJwks.keys.map(j => j.kid)).symmetricDifference(new Set(jwks.keys.map(j => j.kid))).size) {
-        // db jwks have changed
-          initialize.call(provider, jwks)
-          previousJwks = jwks
+
+        if (providerNeedsReset) {
+          await resetProvider()
         }
 
         await commit()

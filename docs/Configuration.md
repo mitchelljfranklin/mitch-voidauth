@@ -12,20 +12,23 @@ To start setting up protected applications, there are multiple authentication op
 
 ## Environment Variables
 
-VoidAuth is configurable primarily by environment variable. For sensitive values, you may alternatively use `FILE__*` environment variables pointing to files. For example, `FILE__STORAGE_KEY=/run/secrets/storage_key` reads the `STORAGE_KEY` value from that file. Each `FILE__*` variable is mutually exclusive with its regular counterpart; you cannot have both `FILE__STORAGE_KEY` and `STORAGE_KEY` defined. The available environment variables and their defaults are listed below:
+VoidAuth is configurable primarily by environment variable. For sensitive values, you may alternatively use `FILE__*` environment variables pointing to files. For example, `FILE__STORAGE_KEY=/run/secrets/storage_key` reads the `STORAGE_KEY` value from that file. Each `FILE__*` variable is mutually exclusive with its regular counterpart; you cannot have both `FILE__STORAGE_KEY` and `STORAGE_KEY` defined.
+
+The available environment variables and their defaults are listed below:
 
 ### App Settings
 
 | Name | Default | Description | Required | Recommended |
 | :------ | :-- | :-------- | :--- | :--- |
 | APP_URL | | URL of the web interface. ex. `https://auth.example.com` or `https://example.com/auth` | 🔴 | |
+| TRUSTED_PROXIES | `loopback, linklocal, uniquelocal` | Sets trusted sources of sensitive HTTP headers. See documentation for how to securely set up a reverse proxy on the [Proxies and ProxyAuth](ProxyAuth-and-Trusted-Header-SSO-Setup.md#proxy-setup) page. Accepts lists of IP addresses or CIDRs, special values `loopback` `linklocal` `uniquelocal`, `true` to trust all sources, or `false` to trust none. | | ✅ |
 | STORAGE_KEY | | Storage encryption key for secret values such as keys and OIDC App Client Secrets. Must be at least 32 characters long and should be randomly generated. If you do not enter one VoidAuth will recommend one to you. | 🔴 | |
 | STORAGE_KEY_SECONDARY | | Secondary storage encryption key, used when rotating the primary storage encryption key. | | |
 | TRUST_PROXY | `true` | Whether to trust `X-Forwarded-*` headers for client IP detection (rate limiting and logging). Only set this to `false` if the app port is exposed directly without a reverse proxy. When left `true`, the app port must only be reachable through a proxy that sanitizes these headers — otherwise clients can spoof their IP to bypass rate limits. | | |
 | SESSION_DOMAIN | `${APP_URL}` Base Domain | Domain of the VoidAuth Session Cookie. This is automatically set to the Base Domain of `${APP_URL}` but may be overridden here. Must be equal to or a higher level domain than `${APP_URL}` | | |
 | DEFAULT_REDIRECT | `${APP_URL}` | The home/landing/app url for your domain. This is where users will be redirected upon accepting an invitation, logout, or clicking the header logo when already on the auth home page. | | ✅ |
 | SIGNUP | `false` | Whether the app allows new users to self-register themselves without invitation. | | |
-| SIGNUP_REQUIRES_APPROVAL | `true` | Whether new users who register themselves require approval by an admin. Setting this to **false** while **SIGNUP** is **true** enables open self-registration; use with caution! ⚠️ | | |
+| SIGNUP_REQUIRES_APPROVAL | `true` | Whether new users who register themselves require approval by an admin. Setting this to `false` while `SIGNUP` is `true` enables open self-registration; use with caution! ⚠️ | | |
 | EMAIL_VERIFICATION | `true` if SMTP_HOST is set, otherwise `false` | If true, users must have an email address and will get a verification email when changing their email address before it can be used. If you are using an email provider, this should probably be `true`. | | |
 | MFA_REQUIRED | `false` | If true, users must use a second security factor while logging in such as an Authenticator Token or Passkey | | |
 | API_RATELIMIT  | `60` | Rate Limit for mutating (state-changing) requests per minute per IP address. Default is `60`, one per second. | | |
@@ -114,7 +117,7 @@ LDAP is disabled by default. See the [LDAP Server](LDAP-Server.md) guide for set
 | DEFAULT_USER_EXPIRES_IN | | The default duration before a new users access will expire as shown on the Invitation page. Can be set to values like: '4 hours', '30 minutes', '1 week', '2 days', etc. or a number in seconds. | | | 
 
 > [!IMPORTANT]
-> Some configuration options only work when used together. **EMAIL_VERIFICATION** should only be set if the **SMTP_** options are also set. Likewise, **SIGNUP_REQUIRES_APPROVAL** does nothing unless **SIGNUP** is set.
+> Some configuration options only work when used together. `EMAIL_VERIFICATION` should only be set if the `SMTP_` options are also set. Likewise, `SIGNUP_REQUIRES_APPROVAL` does nothing unless `SIGNUP` is set.
 
 ## Config Directory
 
@@ -138,7 +141,7 @@ You may also add/modify the `custom.css` file located in the **/app/config/brand
 ## Customization
 
 > [!IMPORTANT]
-> There are enough branding options between environment variables like **APP_TITLE**, **APP_COLOR**, and config directory customization to remove any end-user reference to VoidAuth branding. You can make it your own! Below is an example of some theming changes and light mode enabled:
+> There are enough branding options between environment variables like `APP_TITLE`, `APP_COLOR`, and config directory customization to remove any end-user reference to VoidAuth branding. You can make it your own! Below is an example of some theming changes and light mode enabled:
 >
 > <img width="260" src="/public/screenshots/66152d9b-b041-4374-91ec-4363ab1cb064.png" />
 
@@ -149,4 +152,4 @@ You may also add/modify the `custom.css` file located in the **/app/config/brand
 
 ### Multi-Domain Protection
 
-You can secure multiple domains you own by running multiple instances of VoidAuth using the same database. They should have the same **STORAGE_KEY** and **DB_\*** variables, but may otherwise have completely different configurations. The **APP_URL** variables of each would cover a different domain. If the domains you were trying to secure were `example.com` and `your-domain.net` you might set the **APP_URL** variables like `https://auth.example.com` and `https://id.your-domain.net`. These two instances would share everything in the shared DB, including users, OIDC Apps, ProxyAuth Domains, etc.
+You can secure multiple domains you own while maintaining a single set of user accounts by running multiple instances of VoidAuth using the same database. They should have the same **STORAGE_KEY** and **DB_\*** variables, but may otherwise have completely different configurations. The **APP_URL** variables of each would cover a different domain. If the domains you were trying to secure were `example.com` and `your-domain.net` you might set the **APP_URL** variables like `https://auth.example.com` and `https://id.your-domain.net`. These two instances would share everything in the shared DB, including users, OIDC Apps, ProxyAuth Domains, etc.

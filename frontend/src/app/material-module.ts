@@ -24,6 +24,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker'
 import { MatNativeDateModule } from '@angular/material/core'
 import { MatTimepickerModule } from '@angular/material/timepicker'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
+import { MatBadgeModule } from '@angular/material/badge'
 import { NgxSpinnerModule } from 'ngx-spinner'
 
 @NgModule({
@@ -54,6 +55,7 @@ import { NgxSpinnerModule } from 'ngx-spinner'
     MatNativeDateModule,
     MatTimepickerModule,
     MatSlideToggleModule,
+    MatBadgeModule,
   ],
   providers: [
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },

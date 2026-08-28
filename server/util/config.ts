@@ -10,17 +10,14 @@ import zod from 'zod'
 import type { SecureVersion } from 'node:tls'
 import { randomBytes } from 'node:crypto'
 import { parseDN } from '../ldap/util'
+import { CLIENT_DEFAULTS } from '@shared/constants'
 
 // basic config for app
 class Config {
   APP_TITLE = 'VoidAuth'
   APP_URL = ''
   APP_PORT: number | string = 3000
-
-  // Trust X-Forwarded-* headers for client IP detection (rate limiting, logging).
-  // Only safe when the app port is reachable exclusively through a reverse proxy
-  // that sanitizes these headers; clients can otherwise spoof their rate-limit identity.
-  TRUST_PROXY: boolean = true
+  TRUSTED_PROXIES: string | boolean = 'loopback, linklocal, uniquelocal'
 
   SESSION_DOMAIN?: string
 
@@ -146,6 +143,11 @@ function assignConfigValue(key: keyof Config, value: string | undefined) {
       appConfig[key] = stringDuration(value) ?? posInt(value) ?? appConfig[key]
       break
 
+    case 'TRUSTED_PROXIES':
+      // Can be a boolean or a string of comma-separated IPs/CIDRs/special values (loopback, linklocal, uniquelocal)
+      appConfig[key] = booleanString(value) ?? (value || null) ?? appConfig[key]
+      break
+
     // booleans
     case 'SMTP_SECURE':
     case 'SMTP_NOAUTH':
@@ -162,7 +164,6 @@ function assignConfigValue(key: keyof Config, value: string | undefined) {
     case 'LDAP_SYNC_SKIP_CERT_VERIFICATION':
     case 'LDAP_SYNC_KEEP_DISABLED_USERS':
     case 'LDAP_SYNC_LINK_EXISTING_USERS':
-    case 'TRUST_PROXY':
       appConfig[key] = booleanString(value) ?? appConfig[key]
       break
 
@@ -316,9 +317,7 @@ function registerClientVariable(clients: Map<string, ClientResponse>,
     if (!client) {
       client = {
         client_id: client_id,
-        token_endpoint_auth_method: 'client_secret_basic',
-        response_types: ['code'],
-        grant_types: ['authorization_code', 'refresh_token'],
+        ...CLIENT_DEFAULTS,
         groups: [],
         skip_consent: false,
         declared: source,
@@ -518,7 +517,7 @@ const pslParsedAppUrl = psl.parse(appUrl().hostname)
 if ('listed' in pslParsedAppUrl && !pslParsedAppUrl.listed) {
   logger({
     level: 'debug',
-    message: `APP_URL: '${appConfig.APP_URL}' appears to be a private DNS zone.`,
+    message: `APP_URL: '${appConfig.APP_URL}' appears to be in a private DNS zone.`,
   })
 } else {
   logger({
@@ -550,6 +549,33 @@ if (calculatedSessionDomain) {
     })
     exit(1)
   }
+}
+
+// check that TRUSTED_PROXIES is valid
+if (typeof appConfig.TRUSTED_PROXIES === 'string') {
+  // TRUSTED_PROXIES is a string, check that it is a comma-separated list of valid IPs/CIDRs/special values
+  const trustedProxies = appConfig.TRUSTED_PROXIES.split(',').map(s => s.trim())
+  const parsedProxies = zod.array(
+    zod.union([zod.ipv4(), zod.ipv6(), zod.cidrv4(), zod.cidrv6(), zod.enum(['loopback', 'linklocal', 'uniquelocal'])]),
+  ).safeParse(trustedProxies)
+
+  if (!parsedProxies.success) {
+    logger({
+      level: 'error',
+      message: `TRUSTED_PROXIES must be a boolean or a string of comma-separated IPs/CIDRs/special values (loopback, linklocal, uniquelocal).`,
+    })
+    exit(1)
+  }
+} else if (appConfig.TRUSTED_PROXIES) {
+  logger({
+    level: 'info',
+    message: `TRUSTED_PROXIES is 'true', which may not be secure. Please set to the IP address or CIDR range of your proxy instead.`,
+  })
+} else {
+  logger({
+    level: 'info',
+    message: `TRUSTED_PROXIES is 'false'. Rate limiting will be applied per-proxy IP address, which may cause denial of service to valid requests.`,
+  })
 }
 
 // check DEFAULT_REDIRECT is valid if set
