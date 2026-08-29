@@ -104,6 +104,7 @@ docker compose logs voidauth
 - Standards-compliant OIDC provider for any self-hosted application
 - Client registration via admin UI, environment variables, or Docker labels
 - Group-based access control for OIDC clients — restrict apps to specific user groups
+- Custom claims — attach name/value claims to users, groups, and invitations; included in tokens and user-info responses
 - Support for authorization code flow with PKCE, client credentials, and refresh tokens
 - Back-channel logout support
 
@@ -149,8 +150,9 @@ docker compose logs voidauth
 - Argon2id password hashing for local accounts
 - Encryption-at-rest with configurable storage key
 - Rate limiting on login, API, and password reset endpoints
-- Helmet security headers with configurable CSP
-- Docker container runs as non-root (forward compatibility layer)
+- Helmet security headers with a strict, build-hash-pinned CSP
+- Hardened embedded LDAP server: per-source bind-failure backoff, connection caps, idle timeouts
+- Regularly scanned with OWASP ZAP and internally security-reviewed; findings and fixes are tracked publicly in the [changelog](CHANGELOG.md). This fork has **not** been independently audited.
 
 ---
 
@@ -179,7 +181,7 @@ See [`docs/LDAP-Sync.md`](docs/LDAP-Sync.md) for full attribute mapping options 
 | Layer | Technology |
 |---|---|
 | Framework | Express 5 + TypeScript (ESM) |
-| Frontend | Angular 21 |
+| Frontend | Angular 22 |
 | Database | PostgreSQL or SQLite via Knex |
 | LDAP Client | ldapts |
 | Bundler | esbuild |
@@ -198,6 +200,8 @@ VoidAuth is designed to run behind a TLS-terminating reverse proxy (Caddy, nginx
 - `Host` — public hostname
 - `X-Forwarded-Proto` — `https`
 - `X-Forwarded-For` — client IP (for rate limiting)
+
+Set `TRUSTED_PROXIES` to the IP/CIDR of your reverse proxy for strict client-IP trust (defaults to private ranges).
 
 **Required configuration:**
 - Set `APP_URL` to your public HTTPS URL

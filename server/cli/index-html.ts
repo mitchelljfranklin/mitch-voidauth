@@ -47,6 +47,11 @@ export function extractAngularScriptSrc(indexHtml: string): string[] | null {
   return null
 }
 
+// Requests for version-control metadata and other scanner-probed sensitive
+// paths must 404 rather than fall through to the SPA index (which returns
+// 200 for any extension-less path, polluting scan results).
+const VCS_PROBE_PATTERN = /(^|\/)\.?_?(darcs|git|svn|hg)(\/|$)/i
+
 // Missing asset-like paths (js, css, fonts, etc.) must not fall through to the
 // SPA index; returning HTML for them causes confusing MIME-type failures.
 export function assetNotFoundGuard(): (req: Request, res: Response, next: NextFunction) => void {
@@ -56,7 +61,8 @@ export function assetNotFoundGuard(): (req: Request, res: Response, next: NextFu
       return
     }
 
-    if (/\.[a-z0-9]+$/i.test(new URL(req.originalUrl, 'http://localhost').pathname)) {
+    const pathname = new URL(req.originalUrl, 'http://localhost').pathname
+    if (/\.[a-z0-9]+$/i.test(pathname) || VCS_PROBE_PATTERN.test(pathname)) {
       res.status(404).send({
         message: 'File not found.',
       })

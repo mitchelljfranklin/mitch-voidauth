@@ -22,7 +22,7 @@ features:
   - title: Admin Settings
     details: Runtime configuration from the web interface. Toggle signups, set MFA requirements, change branding with a colour picker and logo upload, and adjust rate limits — no restarts needed.
   - title: OpenID Connect Provider
-    details: Standards-compliant OIDC provider. Register clients via admin UI, env vars, or Docker labels. Group-based access control for each application.
+    details: Standards-compliant OIDC provider. Register clients via admin UI, env vars, or Docker labels. Group-based access control and custom claims for each application.
   - title: LDAP Directory Server
     details: Built-in read-only LDAP server exposing VoidAuth users and groups. Standard LDAPv3 bind authentication with TLS support.
   - title: Proxy ForwardAuth

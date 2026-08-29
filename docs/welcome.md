@@ -23,6 +23,7 @@ Mitch‑VoidAuth bridges that gap with LDAP Directory Sync — the primary reaso
 All upstream VoidAuth features are included:
 
 - OpenID Connect (OIDC) Provider
+- Custom Claims (users, groups, and invitations)
 - LDAP Directory Server
 - LDAP Directory Sync
 - Proxy ForwardAuth

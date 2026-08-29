@@ -64,3 +64,20 @@ git remote add upstream https://github.com/voidauth/voidauth.git
 |---|---|---|
 | `157a1a1` | 2026-07-22 | Initial fork base |
 | `b34e524` | 2026-08-26 | Custom Claims, TRUSTED_PROXIES, supply-chain hardening; TRUST_PROXY retired |
+
+## Accepted scanner findings
+
+The deployment is regularly scanned with OWASP ZAP. The following Medium-level
+CSP findings are **accepted design trade-offs** — do not re-litigate them on
+future scans without revisiting the reasoning:
+
+| Finding | Why accepted |
+|---|---|
+| `form-action 'self' https:` | An OIDC provider must form-post responses to arbitrary client redirect URIs; origins are per-deployment dynamic and cannot be enumerated statically |
+| `img-src 'self' data: https:` | Consent-page client logos come from client-configured `https:` URIs (dynamic per deployment) |
+| `style-src 'unsafe-inline'` | Angular injects critical styles at bootstrap; removal requires restructuring style delivery for marginal gain (script execution is hash-pinned via `strict-dynamic`) |
+| Loosely scoped session cookies (`domain=<base domain>`) | Inherent to cross-subdomain SSO — `SESSION_DOMAIN` must cover all SSO subdomains |
+
+Fixed as a result of the first scan: `worker-src` pinned to `'self'`,
+`Cache-Control` on served index responses, VCS probe paths (`._darcs`,
+`.git`, …) now 404 instead of receiving the SPA index.

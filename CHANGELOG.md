@@ -55,6 +55,7 @@ Security hardening release based on a full audit. Highlights:
 - **Fixed**: cancelling from the MFA screen used browser history to go back, but reaching that screen involves a chain of server redirects — going back re-entered the OIDC flow and bounced straight back to MFA with a stuck loading overlay; cancel now exits deterministically to the home page, logged out
 - **Changed**: the frontend no longer logs a large error object after creating an OIDC interaction; browsers report the intentional manual redirect as an opaque status-0 response, which is now handled as success
 - Login responses now take equal time for unknown usernames and wrong passwords
+- **Hardened from OWASP ZAP scan**: CSP `worker-src` pinned to `'self'`; served index responses now sent with `Cache-Control: no-store` (also prevents stale-index deploy issues); version-control probe paths (`._darcs`, `.git`, `.svn`, `.hg`) return 404 instead of the SPA index. Remaining scan findings are documented as accepted trade-offs in `FORK.md`
 
 #### Added
 - **Admin Settings page** — DB-backed runtime config (Admin → Settings)

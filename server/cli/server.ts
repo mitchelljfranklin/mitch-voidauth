@@ -86,6 +86,7 @@ export async function serve() {
         'font-src': ['\'self\'', 'data:'], // no external fonts
         'style-src': ['\'self\'', '\'unsafe-inline\''], // angular injects critical styles
         'form-action': ['\'self\'', 'https:'], // must be able to form action to external site
+        'worker-src': ['\'self\''], // no web workers are used; do not inherit script-src breadth
       },
     },
   }))
@@ -250,7 +251,8 @@ export async function serve() {
   })
 
   // override index.html return, inject app title
-  app.get(`${basePath()}/index.html`, (_req, res) => {
+  // fork-seam: no-cache on served index (stale index after deploys breaks chunk loading)
+  app.get(`${basePath()}/index.html`, noCache, (_req, res) => {
     const index = modifyIndex()
     res.send(index)
   })
@@ -273,6 +275,9 @@ export async function serve() {
 
   // fork-seam: asset-like unresolved paths 404 instead of returning SPA index
   app.use(assetNotFoundGuard())
+
+  // fork-seam: no-cache on SPA fallback responses (they may serve index)
+  app.use(noCache)
 
   // Unresolved GET requests should return index if they start with basePath
   app.use((req, res, next) => {

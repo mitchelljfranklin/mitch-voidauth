@@ -73,6 +73,10 @@ try {
   # meta CSP present in served html
   Assert 'Angular autoCsp meta present' ($index.Content -match 'http-equiv="Content-Security-Policy"')
 
+  # worker-src pinned and index not cacheable
+  Assert 'CSP worker-src pinned to self' ($csp -match "worker-src 'self'")
+  Assert 'index served with no-store' ($index.Headers['Cache-Control'] -match 'no-store|no-cache')
+
   # gated admin routes exist (401 = auth-gated, route present)
   foreach ($route in @('/api/admin/settings', '/api/admin/claims', '/api/user/me')) {
     try {
