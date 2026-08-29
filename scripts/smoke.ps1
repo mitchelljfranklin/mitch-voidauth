@@ -1,11 +1,13 @@
 # Runtime smoke test for a built mitch-voidauth image.
-# Usage: .\scripts\smoke.ps1 [-Image mitch-voidauth:local] [-Port 3002]
+# Usage: .\scripts\smoke.ps1 [-Image mitch-voidauth:local] [-Port 3002] [-Ldap]
 # Boots a throwaway Postgres + app container pair on a docker network, asserts
 # the fork's security-relevant runtime behavior, then cleans up.
+# -Ldap additionally boots the embedded LDAP server and asserts it listens.
 
 param(
   [string]$Image = 'mitch-voidauth:local',
-  [int]$Port = 3002
+  [int]$Port = 3002,
+  [switch]$Ldap
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,10 +32,17 @@ $ErrorActionPreference = 'Stop'
 try {
   docker run -d --name $db --network $net -e POSTGRES_PASSWORD=smokepass postgres:18 | Out-Null
   Start-Sleep -Seconds 6
-  docker run -d --name $app --network $net -p "${Port}:3000" `
+  $ldapEnv = @()
+  $ldapPortArgs = @()
+  if ($Ldap) {
+    $ldapEnv = @('-e', 'LDAP_ENABLED=true', '-e', 'LDAP_BIND_PASSWORD=smokepass')
+    $ldapPortArgs = @('-p', '3890:3890')
+  }
+  docker run -d --name $app --network $net -p "${Port}:3000" @ldapPortArgs `
     -e APP_URL="http://localhost:${Port}" `
     -e STORAGE_KEY=$storageKey `
     -e DB_HOST=$db -e DB_PASSWORD=smokepass `
+    @ldapEnv `
     $Image | Out-Null
 
   # wait for healthcheck
@@ -79,6 +88,11 @@ try {
   $logs = docker logs $app 2>&1 | Out-String
   Assert 'database schema updated (migrations ran)' ($logs -match 'Database schema updated')
   Assert 'no server error in logs' (-not ($logs -match '"level":"error"'))
+
+  if ($Ldap) {
+    Assert 'embedded LDAP server listening' ($logs -match 'LDAP Server listening')
+    Assert 'LDAP enabled in logs' ($logs -match 'LDAP')
+  }
 
   if ($script:failed -eq 0) {
     Write-Host "SMOKE OK - all checks passed against $Image"

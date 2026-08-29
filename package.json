@@ -17,7 +17,8 @@
     "i18n:normalize": "node scripts/normalize-i18n.mjs",
     "test:totp": "tsx test/totp-harness.ts",
     "test:ldap-sync": "tsx test/admin-sync-harness.ts",
-    "seams:apply": "node scripts/apply-seams.mjs"
+    "seams:apply": "node scripts/apply-seams.mjs",
+    "test:ldap-guard": "tsx test/ldap-bind-guard.ts"
   },
   "author": "Derek Paschal",
   "license": "SEE LICENSE IN LICENSE FILE",

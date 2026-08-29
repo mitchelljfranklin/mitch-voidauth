@@ -21,6 +21,8 @@ import { timingSafeEqual } from 'node:crypto'
 import zod from 'zod'
 import { stringCompare } from '@shared/utils'
 import { als } from '../util/als'
+// fork-seam: bind backoff, connection cap and idle timeout live in ./hardening.ts
+import { admitConnection, isBindBlocked, recordBindFailure, recordBindSuccess } from './hardening'
 
 const RESULT_SUCCESS = 0
 const RESULT_OPERATIONS_ERROR = 1
@@ -36,17 +38,6 @@ const MAX_BUFFER_SIZE = 256 * 1024 // 256 KiB per connection buffer
 const MAX_BER_SEQUENCE_ELEMENTS = 200
 const MAX_SEARCH_ATTRIBUTES = 100
 const MAX_INTEGER_BYTES = 4 // limit BER integer byte length
-const MAX_CONNECTIONS = 64
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000
-const BIND_FAILURES_BEFORE_BACKOFF = 5
-const BIND_BACKOFF_BASE_MS = 30 * 1000
-const BIND_BACKOFF_MAX_MS = 15 * 60 * 1000
-
-// Per-client bind-failure tracking to slow online password guessing.
-// After BIND_FAILURES_BEFORE_BACKOFF consecutive failed binds from one source
-// address, further binds are refused (with a generic invalidCredentials result)
-// for an exponentially growing window up to BIND_BACKOFF_MAX_MS.
-const bindFailures = new Map<string, { failures: number, blockedUntil: number }>()
 
 type LDAPConnection = {
   bindDN: string
@@ -140,16 +131,6 @@ export function startLDAPServer() {
     })
   })
 
-  const bindFailureCleanup = setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of bindFailures) {
-      if (entry.blockedUntil < now) {
-        bindFailures.delete(key)
-      }
-    }
-  }, 10 * 60 * 1000)
-  bindFailureCleanup.unref()
-
   server.listen(appConfig.LDAP_PORT, () => {
     logger({
       level: 'info',
@@ -160,53 +141,11 @@ export function startLDAPServer() {
   return server
 }
 
-const activeConnections = new Set<Socket>()
-
-function clientAddress(socket: Socket): string {
-  return socket.remoteAddress ?? 'unknown'
-}
-
-function isBindBlocked(socket: Socket): boolean {
-  const entry = bindFailures.get(clientAddress(socket))
-  return !!entry && entry.blockedUntil > Date.now()
-}
-
-function recordBindFailure(socket: Socket) {
-  const key = clientAddress(socket)
-  const entry = bindFailures.get(key) ?? { failures: 0, blockedUntil: 0 }
-  entry.failures += 1
-  if (entry.failures >= BIND_FAILURES_BEFORE_BACKOFF) {
-    const backoffMs = Math.min(
-      BIND_BACKOFF_BASE_MS * (2 ** (entry.failures - BIND_FAILURES_BEFORE_BACKOFF)),
-      BIND_BACKOFF_MAX_MS,
-    )
-    entry.blockedUntil = Date.now() + backoffMs
-  }
-  bindFailures.set(key, entry)
-}
-
-function recordBindSuccess(socket: Socket) {
-  bindFailures.delete(clientAddress(socket))
-}
-
 function handleConnection(socket: Socket) {
-  if (activeConnections.size >= MAX_CONNECTIONS) {
-    logger({ level: 'debug', message: 'LDAP connection rejected; too many active connections' })
-    socket.destroy()
+  // fork-seam: connection cap and idle timeout via hardening module
+  if (!admitConnection(socket)) {
     return
   }
-
-  activeConnections.add(socket)
-  socket.setTimeout(IDLE_TIMEOUT_MS)
-
-  socket.once('timeout', () => {
-    logger({ level: 'debug', message: 'LDAP client connection idle timeout; closing connection' })
-    socket.destroy()
-  })
-  socket.once('close', () => {
-    activeConnections.delete(socket)
-  })
-
   const connection: LDAPConnection = {
     bindDN: '',
     buffer: Buffer.alloc(0),
@@ -317,16 +256,16 @@ async function handleBind(connection: LDAPConnection, messageId: number, op: BER
     const auth = reader.readElement()
     const password = auth.tag === 0x80 ? auth.value.toString('utf8') : ''
 
-    if (version !== 3 || auth.tag !== 0x80) {
-      logger({ level: 'debug', message: 'LDAP bind request with unsupported version or authentication method' })
-      connection.socket.write(ldapResult(messageId, 0x61, RESULT_PROTOCOL_ERROR))
-      return
-    }
-
     if (isBindBlocked(connection.socket)) {
       // Respond identically to a bad credential so blocking is not detectable
       logger({ level: 'debug', message: 'LDAP bind refused due to prior failures from this source' })
       connection.socket.write(ldapResult(messageId, 0x61, RESULT_INVALID_CREDENTIALS))
+      return
+    }
+
+    if (version !== 3 || auth.tag !== 0x80) {
+      logger({ level: 'debug', message: 'LDAP bind request with unsupported version or authentication method' })
+      connection.socket.write(ldapResult(messageId, 0x61, RESULT_PROTOCOL_ERROR))
       return
     }
 
@@ -342,6 +281,7 @@ async function handleBind(connection: LDAPConnection, messageId: number, op: BER
         && appConfig.LDAP_BIND_PASSWORD.length === password.length
         && timingSafeEqual(Buffer.from(password), Buffer.from(appConfig.LDAP_BIND_PASSWORD))) {
         logger({ level: 'debug', message: 'LDAP bind request with valid bind DN and password' })
+        // fork-seam: record successful service bind
         recordBindSuccess(connection.socket)
         connection.bindDN = appConfig.LDAP_BIND_DN
         connection.socket.write(ldapResult(messageId, 0x61, RESULT_SUCCESS))
@@ -349,6 +289,7 @@ async function handleBind(connection: LDAPConnection, messageId: number, op: BER
       }
 
       logger({ level: 'debug', message: 'LDAP bind request with invalid bind DN or password' })
+      // fork-seam: record failed service bind
       recordBindFailure(connection.socket)
       connection.socket.write(ldapResult(messageId, 0x61, RESULT_INVALID_CREDENTIALS))
       return
@@ -358,6 +299,7 @@ async function handleBind(connection: LDAPConnection, messageId: number, op: BER
     const user = await getLDAPUserIdByDN(dn)
     if (!user || !password || !await checkPasswordHash(user.id, password)) {
       logger({ level: 'debug', message: 'LDAP bind request with invalid user credentials' })
+      // fork-seam: record failed user bind
       recordBindFailure(connection.socket)
       connection.socket.write(ldapResult(messageId, 0x61, RESULT_INVALID_CREDENTIALS))
       return
@@ -365,12 +307,14 @@ async function handleBind(connection: LDAPConnection, messageId: number, op: BER
 
     if (!userCanLogin(user, ['pwd'])) {
       logger({ level: 'debug', message: 'LDAP bind request with user unable to login with a password' })
+      // fork-seam: record bind of a login-ineligible user
       recordBindFailure(connection.socket)
       connection.socket.write(ldapResult(messageId, 0x61, RESULT_INVALID_CREDENTIALS))
       return
     }
 
     logger({ level: 'debug', message: 'LDAP bind request with valid user credentials' })
+    // fork-seam: record successful user bind
     recordBindSuccess(connection.socket)
     connection.bindDN = dn
     connection.socket.write(ldapResult(messageId, 0x61, RESULT_SUCCESS))

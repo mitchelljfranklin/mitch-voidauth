@@ -11,7 +11,7 @@ git remote add upstream https://github.com/voidauth/voidauth.git
 
 ## Fork-only files (upstream never has these)
 
-`Dockerfile.fork`, `compose.fork.yml`, `.github/workflows/release-fork.yml`, `.github/workflows/docs-fork.yml`, `.github/workflows/upstream-drift.yml`, `.github/README.md`, `SECURITY.md`, `CHANGELOG.md`, `AGENTS.md`, `FORK.md`, `docs/.vitepress/`, `docs/package.json`, `docs/index.md`, `docs/welcome.md`, `docs/LDAP-Sync.md`, `server/ldap/sync.ts`, `server/cli/index-html.ts`, `server/util/cors.ts`, `server/util/login-timing.ts`, `server/util/redact.ts`, `test/`, `scripts/`, `migrations/20260825000000_totp_last_used_timestep.ts`
+`Dockerfile.fork`, `compose.fork.yml`, `.github/workflows/release-fork.yml`, `.github/workflows/docs-fork.yml`, `.github/workflows/upstream-drift.yml`, `.github/README.md`, `SECURITY.md`, `CHANGELOG.md`, `AGENTS.md`, `FORK.md`, `docs/.vitepress/`, `docs/package.json`, `docs/index.md`, `docs/welcome.md`, `docs/LDAP-Sync.md`, `server/ldap/sync.ts`, `server/ldap/hardening.ts`, `server/cli/index-html.ts`, `server/util/cors.ts`, `server/util/login-timing.ts`, `server/util/redact.ts`, `test/`, `scripts/`, `migrations/20260825000000_totp_last_used_timestep.ts`
 
 `README.md` (root) intentionally stays upstream-clean.
 
@@ -20,7 +20,7 @@ git remote add upstream https://github.com/voidauth/voidauth.git
 | # | File | Divergence | Re-verify |
 |---|---|---|---|
 | H1 | `server/util/argon2id.ts` | Argon2 verification runs in a worker-thread pool (off the event loop); upstream uses `argon2Sync` inline | `npm run fork:check` + `npm run test:totp` |
-| H2 | `server/ldap/server.ts` | Bind-failure backoff (`BIND_FAILURES_BEFORE_BACKOFF`), `MAX_CONNECTIONS`, `IDLE_TIMEOUT_MS` | `npm run fork:check` |
+| H2 | `server/ldap/hardening.ts` | Bind-failure backoff (`BIND_FAILURES_BEFORE_BACKOFF`), `MAX_CONNECTIONS`, `IDLE_TIMEOUT_MS`; `server.ts` keeps seams (import, connection guard, blocked check, 5 record calls) | `npm run fork:check` + `npm run test:ldap-guard` |
 | H3 | `shared/constants.ts` | `SESSION: 14 * DAY`, `GRANT: 90 * DAY` (upstream: 1 year); `EMAIL_LOG: 30 * DAY` retention TTL | `npm run fork:check` |
 | H4 | `server/routes/user.ts` | `return` after password-strength 422; `endSessions(user.id)` after password change | `npm run fork:check` |
 | H5 | `server/routes/public.ts` | `return` after password-strength 422; successful reset deletes **all** outstanding tokens for the user | `npm run fork:check` |

@@ -25,9 +25,9 @@ for (const seam of seams) {
 // ---- owned-file / constant divergences (not seam-able) ----
 const checks = [
   ['server/util/argon2id.ts', /runInPool/, 'H1 argon2 verification worker pool'],
-  ['server/ldap/server.ts', /BIND_FAILURES_BEFORE_BACKOFF/, 'H2 ldap bind-failure backoff'],
-  ['server/ldap/server.ts', /MAX_CONNECTIONS/, 'H2 ldap connection cap'],
-  ['server/ldap/server.ts', /IDLE_TIMEOUT_MS/, 'H2 ldap idle timeout'],
+  ['server/ldap/hardening.ts', /BIND_FAILURES_BEFORE_BACKOFF/, 'H2 ldap bind-failure backoff'],
+  ['server/ldap/hardening.ts', /MAX_CONNECTIONS/, 'H2 ldap connection cap'],
+  ['server/ldap/hardening.ts', /IDLE_TIMEOUT_MS/, 'H2 ldap idle timeout'],
   ['server/ldap/sync.ts', /LDAP_SYNC_LINK_EXISTING_USERS/, 'F1 ldap linking opt-in flag'],
   ['server/ldap/sync.ts', /SYNC_ACTOR_ID/, 'F1 provenance-based admin revocation'],
   ['server/ldap/sync.ts', /was not found among the synced groups/, 'F1 admin-group typo diagnostic'],
