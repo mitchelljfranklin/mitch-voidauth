@@ -56,7 +56,7 @@ git remote add upstream https://github.com/voidauth/voidauth.git
 8. **Integration**: start Postgres per `test/README.md`, run `npm run test:totp` and `npm run test:ldap-sync` — all assertions must pass.
 9. **Build**: `npx tsc && npx eslint ./ && npm run server:build`; frontend AOT build happens inside the Docker build (local Node may be below Angular's floor).
 10. **Runtime smoke**: build the image and run `scripts/smoke.ps1 -Image <tag>` — all checks must pass.
-11. **Post-merge**: update the upstream-base table in `CHANGELOG.md`; mirror any upstream `Dockerfile` changes into `Dockerfile.fork`; update this manifest if divergences changed; cherry-pick valuable upstream docs changes into the fork docs (they are `merge=ours`-protected, so they do not land automatically).
+11. **Post-merge**: run `npm run base:set` (or `node scripts/set-base.mjs <sha> <date> <notes>`) to record the new upstream base in FORK.md and CHANGELOG.md; mirror any upstream `Dockerfile` changes into `Dockerfile.fork`; update this manifest if divergences changed; cherry-pick valuable upstream docs changes into the fork docs (they are `merge=ours`-protected, so they do not land automatically).
 
 ## History
 

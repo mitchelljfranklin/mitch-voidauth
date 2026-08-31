@@ -18,6 +18,7 @@
     "test:totp": "tsx test/totp-harness.ts",
     "test:ldap-sync": "tsx test/admin-sync-harness.ts",
     "seams:apply": "node scripts/apply-seams.mjs",
+    "base:set": "node scripts/set-base.mjs",
     "test:ldap-guard": "tsx test/ldap-bind-guard.ts"
   },
   "author": "Derek Paschal",

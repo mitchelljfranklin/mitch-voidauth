@@ -100,10 +100,17 @@ for (const tree of ['server', 'shared', 'docs', 'frontend/src']) {
 }
 
 // Dockerfile.fork must carry the same non-dhi.io FROM lines (digest pins) as Dockerfile
+function registryOf(line) {
+  // second whitespace token is the image ref; its registry is everything before the first '/'
+  const image = line.split(/\s+/)[1] ?? ''
+  const slash = image.indexOf('/')
+  return slash === -1 ? '' : image.slice(0, slash)
+}
+
 function fromLines(path) {
   return read(path)
     .split('\n')
-    .filter(l => l.startsWith('FROM ') && !l.includes('dhi.io'))
+    .filter(l => l.startsWith('FROM ') && registryOf(l) !== 'dhi.io')
     .map(l => l.trim())
 }
 const upstreamFroms = fromLines('Dockerfile')
