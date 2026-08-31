@@ -30,10 +30,21 @@ jobs:
           echo "count=${COUNT}" >> ${GITHUB_ENV}
           git log --oneline origin/main..upstream/main | head -30 > commits.txt || true
 
+      - name: Ensure drift label exists
+        if: env.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create upstream-sync --color 0E8A16 --description "Upstream voidauth/main has moved" 2>/dev/null \
+            && echo "label created" \
+            || echo "label already exists (or cannot be created; issue will be created without it)"
+
       - name: Open or refresh drift issue
         if: env.count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           TITLE="Upstream drift: ${COUNT} new commit(s) on voidauth/main"
           OLD=$(gh issue list --state open --search "Upstream drift in:title" --json number --jq '.[0].number' || true)
@@ -50,4 +61,20 @@ jobs:
             echo ""
             echo "Run the merge playbook in \`FORK.md\` when ready — smaller, more frequent syncs keep merges easy."
           } > body.md
-          gh issue create --title "${TITLE}" --body-file body.md --label "upstream-sync" || gh issue create --title "${TITLE}" --body-file body.md
+          if ! gh issue create --title "${TITLE}" --body-file body.md --label "upstream-sync"; then
+            echo "labelled create failed; retrying without label"
+            gh issue create --title "${TITLE}" --body-file body.md
+          fi
+
+      - name: Diagnose token permissions (on failure)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Token permissions as seen by the API:"
+          gh api repos/${GITHUB_REPOSITORY} --jq '.permissions' || true
+          echo ""
+          echo "If 'issues' is false above despite the workflow declaring issues:write,"
+          echo "check Settings → Actions → General → Workflow permissions and set it to"
+          echo "'Read and write permissions', then re-run this workflow."
