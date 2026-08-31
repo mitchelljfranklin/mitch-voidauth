@@ -31,6 +31,7 @@ export class MfaComponent implements OnInit {
   disabled = signal<boolean>(false)
   secret = signal<string | undefined>(undefined)
   uri = signal<string | undefined>(undefined)
+  lockedUntil = signal<Date | null>(null)
 
   private configService = inject(ConfigService)
   private passkeyService = inject(PasskeyService)
@@ -50,7 +51,7 @@ export class MfaComponent implements OnInit {
         // If user cannot be loaded, do nothing
       }
 
-      this.passkeySupport = await this.passkeyService.getPasskeySupport()
+      this.passkeySupport = this.passkeyService.getPasskeySupport()
       this.config = await this.configService.getConfig()
 
       // User does not have a totp, but should be able to register one
@@ -84,7 +85,7 @@ export class MfaComponent implements OnInit {
       // See if we want to ask the user to register a passkey
       try {
         const user = (await this.authService.interactionExists()).user
-        if (user && (await this.passkeyService.shouldAskPasskey(user))) {
+        if (user && this.passkeyService.shouldAskPasskey(user)) {
           this.spinnerService.hide()
           await this.passkeyService.dialogRegistration()
         }
@@ -98,7 +99,18 @@ export class MfaComponent implements OnInit {
       }
     } catch (e) {
       console.error(e)
-      if (e instanceof HttpErrorResponse && e.status === 401) {
+      if (e instanceof HttpErrorResponse && e.status === 423) {
+        const errorBody: unknown = e.error
+        if (typeof errorBody === 'object' && errorBody !== null && 'lockedUntil' in errorBody
+          && typeof errorBody.lockedUntil === 'string') {
+          const lockedUntil = new Date(errorBody.lockedUntil)
+          if (Number.isNaN(lockedUntil.getTime())) {
+            return
+          }
+
+          this.lockedUntil.set(lockedUntil)
+        }
+      } else if (e instanceof HttpErrorResponse && e.status === 401) {
         this.snackbarService.error('Invalid code entered.')
       } else {
         this.snackbarService.error('Something went wrong.')

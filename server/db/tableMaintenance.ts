@@ -14,7 +14,9 @@ import { decryptString, encryptString } from './util'
 import type { TOTP } from '@shared/db/TOTP'
 import type { EmailLog } from '@shared/db/EmailLog'
 import { TTLs } from '@shared/constants'
+import type { TOTPFailedAttempt } from '@shared/db/TOTPFailedAttempt'
 import { logger } from '../util/logger'
+import type { DeepWritable } from '@shared/utils'
 
 export async function clearAllExpiredEntries() {
   await db().delete().table<Key>(TABLES.KEY).where('expiresAt', '<', new Date())
@@ -26,6 +28,7 @@ export async function clearAllExpiredEntries() {
   await db().delete().table<PasskeyRegistration>(TABLES.PASSKEY_REGISTRATION).where('expiresAt', '<', new Date())
   await db().delete().table<PasskeyAuthentication>(TABLES.PASSKEY_AUTHENTICATION).where('expiresAt', '<', new Date())
   await db().delete().table<TOTP>(TABLES.TOTP).where('expiresAt', '<', new Date())
+  await db().delete().table<TOTPFailedAttempt>(TABLES.TOTP_FAILED_ATTEMPT).where('expiresAt', '<', new Date())
   // email_log rows have no expiry column; retain for a fixed audit window
   await db().delete().table<EmailLog>(TABLES.EMAIL_LOG)
     .where('createdAt', '<', new Date(Date.now() - TTLs.EMAIL_LOG * 1000))
@@ -64,7 +67,7 @@ export async function updateEncryptedTables(enableWarnings: boolean = false) {
   const { locked: lockedClients, decryptable: decryptableClients } = checkEncrypted(
     (await db().select().table<OIDCPayload>(TABLES.OIDC_PAYLOADS).where({ type: 'Client' })).map((p) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const payload: ClientMetadata = JSON.parse(p.payload)
+      const payload: DeepWritable<ClientMetadata> = JSON.parse(p.payload)
       return {
         id: p.id,
         payload,

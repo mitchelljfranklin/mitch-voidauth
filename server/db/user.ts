@@ -13,7 +13,7 @@ import { getUserPasskeys } from './passkey'
 import { argon2 } from '../util/argon2id'
 import zod from 'zod'
 import { createPasswordReset, getPasswordResetURL } from './passwordReset'
-import { humanDuration } from '@shared/utils'
+import { getEnglishDuration } from '@shared/utils'
 import { TABLES } from '@shared/db'
 import { verifyLDAPPassword } from '../ldap/sync'
 import { logger } from '../util/logger'
@@ -287,7 +287,7 @@ export async function createInitialAdmin() {
 
     console.log('====================================================================================================')
     console.log('')
-    console.log(`Password reset link for the initial admin user, valid for ${humanDuration(TTLs.DAY * 1000)}:`)
+    console.log(`Password reset link for the initial admin user, valid for ${getEnglishDuration(TTLs.DAY * 1000)}:`)
     console.log('')
     console.log(resetUrl)
     console.log('')
