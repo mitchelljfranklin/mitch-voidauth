@@ -6,6 +6,7 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 | Upstream base | Merged on |
 |---|---|
+| `b577ba9` | 2026-08-30 |
 | `b34e524` | 2026-08-26 |
 
 ## Fork changes
@@ -14,6 +15,7 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 #### Upstream sync
 
+- **2026-08-30 follow-up sync (24 commits)**: ProxyAuth self-access bypass overmatching fix (security), TOTP failed-attempt lockout (10 attempts within a 10-minute window → 10-minute lockout, with countdown UX on the MFA page), oidc-provider client-metadata readonly fix, passkey wording simplification, dependency updates. Upstream's lockout coexists with the fork's TOTP replay protection — lockout is enforced at the route level, replay protection at the timestep level
 - Merged 52 upstream commits: **Custom Claims** feature (users/groups/invitations, new admin page, `custom_claims` migration), **`TRUSTED_PROXIES`** environment variable (per-proxy/CIDR trust replacing the fork's `TRUST_PROXY` boolean — remove `TRUST_PROXY` from your environment when upgrading; the default `loopback, linklocal, uniquelocal` covers typical reverse-proxy setups), supply-chain hardening (GitHub Actions pinned to SHAs, base image digest-pinned, dependabot), prototype-pollution fix, COOP disabled for popup OIDC flows, and ru-RU locale
 - Angular dependency pins aligned with upstream's Angular 22 line
 

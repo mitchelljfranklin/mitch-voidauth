@@ -4,8 +4,8 @@ import { isMatch } from 'matcher'
 // `clientBasedCORS: corsForClient` seam (see FORK.md).
 
 type CorsClient = {
-  redirectUris?: string[]
-  postLogoutRedirectUris?: string[]
+  redirectUris?: readonly string[]
+  postLogoutRedirectUris?: readonly string[]
 }
 
 // Only allow CORS for origins that belong to the client's registered

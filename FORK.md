@@ -64,6 +64,7 @@ git remote add upstream https://github.com/voidauth/voidauth.git
 |---|---|---|
 | `157a1a1` | 2026-07-22 | Initial fork base |
 | `b34e524` | 2026-08-26 | Custom Claims, TRUSTED_PROXIES, supply-chain hardening; TRUST_PROXY retired |
+| `b577ba9` | 2026-08-30 | ProxyAuth overmatching security fix, TOTP account lockout, oidc-provider readonly-metadata fix, passkey wording |
 
 ## Accepted scanner findings
 
