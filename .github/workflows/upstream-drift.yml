@@ -30,6 +30,19 @@ jobs:
           echo "count=${COUNT}" >> ${GITHUB_ENV}
           git log --oneline origin/main..upstream/main | head -30 > commits.txt || true
 
+      - name: Close resolved drift issues
+        if: env.count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          OLD=$(gh issue list --state open --search "Upstream drift in:title" --json number --jq '.[0].number' || true)
+          if [ -n "${OLD}" ]; then
+            gh issue close "${OLD}" --comment "Resolved — the upstream commits have been merged into this fork."
+          else
+            echo "no open drift issue"
+          fi
+
       - name: Ensure drift label exists
         if: env.count != '0'
         env:
