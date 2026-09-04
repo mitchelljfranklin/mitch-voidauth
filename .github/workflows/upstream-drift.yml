@@ -27,11 +27,11 @@ jobs:
         id: drift
         run: |
           COUNT=$(git rev-list --count origin/main..upstream/main)
-          echo "count=${COUNT}" >> ${GITHUB_ENV}
+          echo "COUNT=${COUNT}" >> ${GITHUB_ENV}
           git log --oneline origin/main..upstream/main | head -30 > commits.txt || true
 
       - name: Close resolved drift issues
-        if: env.count == '0'
+        if: env.COUNT == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Ensure drift label exists
-        if: env.count != '0'
+        if: env.COUNT != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -54,7 +54,7 @@ jobs:
             || echo "label already exists (or cannot be created; issue will be created without it)"
 
       - name: Open or refresh drift issue
-        if: env.count != '0'
+        if: env.COUNT != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
