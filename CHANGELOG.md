@@ -6,6 +6,7 @@ This fork tracks [voidauth/voidauth](https://github.com/voidauth/voidauth).
 
 | Upstream base | Merged on |
 |---|---|
+| `446aa19` | 2026-09-04 |
 | `b577ba9` | 2026-08-30 |
 | `b34e524` | 2026-08-26 |
 
